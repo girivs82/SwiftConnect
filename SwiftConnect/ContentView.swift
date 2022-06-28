@@ -44,6 +44,7 @@ struct VPNLaunchedScreen: View {
         }.buttonStyle(PlainButtonStyle())
                 .position(x: 155, y: 190)
         }
+        .environmentObject(vpn)
     }
 }
 
@@ -52,13 +53,36 @@ struct VPNLaunchedScreen_Previews: PreviewProvider {
         VPNLaunchedScreen()
             .padding(windowInsets)
             .frame(width: windowSize.width, height: windowSize.height).background(VisualEffect())
+            .environmentObject(VPNController())
+    }
+}
+
+struct VPNProgressingScreen: View {
+    @EnvironmentObject var vpn: VPNController
+    
+    var body: some View {
+            VStack {
+                Text("Connecting...")
+                Spacer().frame(height: 25)
+                Button(action: { vpn.kill() }) {
+                    Text("Disconnect")
+                }.keyboardShortcut(.defaultAction)
+        }
+        .environmentObject(vpn)
+    }
+}
+
+struct VPNProgressingScreen_Previews: PreviewProvider {
+    static var previews: some View {
+        VPNProgressingScreen().environmentObject(VPNController())
     }
 }
 
 struct VPNLoginScreen: View {
     @EnvironmentObject var vpn: VPNController
     @EnvironmentObject var credentials: Credentials
-    @State private var saveToKeychain = true
+    @State private var saveToKeychain = false
+    @State private var useSAMLv2 = true
     
     var body: some View {
         VStack {
@@ -68,20 +92,78 @@ struct VPNLoginScreen: View {
                 }
             }
             TextField("Portal", text: $credentials.portal)
-            TextField("Username", text: $credentials.username)
-            SecureField("Password", text: $credentials.password).onSubmit {
-                vpn.start(credentials: credentials, save: saveToKeychain)
+            if !useSAMLv2 {
+                TextField("Username", text: $credentials.username)
+                SecureField("Password", text: $credentials.password).onSubmit {
+                    vpn.start(credentials: credentials, save: saveToKeychain)
+                }
             }
             Toggle(isOn: $saveToKeychain) {
                 Text("Save to Keychain")
             }.toggleStyle(CheckboxToggleStyle())
             Spacer().frame(height: 25)
+            Toggle(isOn: $useSAMLv2) {
+                Text("SAMLv2")
+            }.toggleStyle(CheckboxToggleStyle())
+            Spacer().frame(height: 25)
             Button(action: {
+                self.credentials.samlv2 = self.useSAMLv2
                 vpn.start(credentials: credentials, save: saveToKeychain)
             }) {
                 Text("Connect")
             }.keyboardShortcut(.defaultAction)
+             .disabled(!useSAMLv2)
         }
+    }
+}
+
+struct VPNLoginScreen_Previews: PreviewProvider {
+    
+    static var previews: some View {
+        VPNLoginScreen().environmentObject(VPNController()).environmentObject(Credentials())
+    }
+}
+
+struct VPNWebAuthScreen: View {
+    @EnvironmentObject var vpn: VPNController
+    @EnvironmentObject var credentials: Credentials
+    @ObservedObject var model: WebViewModel
+    @State private var saveToKeychain = false
+    @State private var useSAMLv2 = true
+    
+    init(mesgURL: URL) {
+        self.model = WebViewModel(link: mesgURL)
+        }
+    
+    var body: some View {
+        VStack {
+            HStack(alignment: .center) {
+                Spacer()
+                Spacer()
+                //The title of the webpage
+                Text(self.model.didFinishLoading ? self.model.pageTitle : "")
+                Spacer()
+                //The "Open with Safari" button on the top right side of the preview
+                Button(action: {
+                    if let url = self.model.link {
+                        NSWorkspace.shared.open(url)
+                    }
+                }) {
+                    Text("Open with Safari")
+                }
+            }
+            //The webpage itself
+            AuthWebView(viewModel: model)
+        }.frame(width: 800, height: 450, alignment: .bottom)
+            .padding(5.0)
+
+    }
+}
+
+struct VPNWebAuthScreen_Previews: PreviewProvider {
+    
+    static var previews: some View {
+        VPNWebAuthScreen(mesgURL: URL(string: "")!).environmentObject(VPNController()).environmentObject(Credentials())
     }
 }
 
@@ -93,18 +175,22 @@ struct ContentView: View {
     var body: some View {
         VStack {
             switch vpn.state {
-            case .stopped: VPNLoginScreen()
-            case .processing: ProgressView()
-            case .launched: VPNLaunchedScreen()
+            case .stopped: VPNLoginScreen().frame(width: windowSize.width, height: windowSize.height)
+            case .webauth: VPNWebAuthScreen(mesgURL: URL(string: self.credentials.preauth!.login_url!)!).frame(width: 800, height: 450)
+            case .processing: ProgressView().frame(width: windowSize.width, height: windowSize.height)
+            case .launched: VPNLaunchedScreen().frame(width: windowSize.width, height: windowSize.height)
             }
         }
         .padding(windowInsets)
-        .frame(width: windowSize.width, height: windowSize.height).background(VisualEffect()).environmentObject(vpn).environmentObject(credentials)
+        .background(VisualEffect())
+        .environmentObject(vpn)
+        .environmentObject(credentials)
     }
 }
 
 struct ContentView_Previews: PreviewProvider {
+    
     static var previews: some View {
-        ContentView()
+        ContentView().environmentObject(VPNController()).environmentObject(Credentials())
     }
 }

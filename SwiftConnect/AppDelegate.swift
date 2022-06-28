@@ -58,9 +58,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         if let window = NSApplication.shared.windows.first {
             window.close()
         }
-        if !testPrivilege() {
-            relaunch()
-        }
+//        if !testPrivilege() {
+//            relaunch()
+//        }
         // Initialize statusItem
         statusItem.button!.target = self
     }
@@ -100,6 +100,15 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
     
     func testPrivilege() -> Bool {
         return getuid() == 0;
+    }
+    
+    func openSAMLWebAuth() {
+        let popover = NSPopover()
+        let contentView = ContentView()
+        popover.contentSize = NSSize(width: 800, height: 800)
+        popover.contentViewController = NSHostingController(rootView: contentView)
+        popover.behavior = .transient
+        popover.delegate = self
     }
     
     func relaunch() {
@@ -160,7 +169,7 @@ class ContextMenu: NSObject, NSMenuDelegate {
     }
     
     @objc func openProjectURL(_ menu: NSMenuItem) {
-        NSWorkspace.shared.open(URL(string: "https://github.com/wenyuzhao/SwiftConnect")!)
+        NSWorkspace.shared.open(URL(string: "https://github.com/girivs82/SwiftConnect")!)
     }
 }
 

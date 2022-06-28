@@ -13,11 +13,12 @@ import Security
 
 
 enum VPNState {
-    case stopped, processing, launched
+    case stopped, webauth, processing, launched
     
     var description : String {
       switch self {
       case .stopped: return "stopped"
+      case .webauth: return "webauth"
       case .processing: return "launching"
       case .launched: return "launched"
       }
@@ -25,7 +26,7 @@ enum VPNState {
 }
 
 enum VPNProtocol: String, Equatable, CaseIterable {
-    case globalProtect = "gp"
+    case globalProtect = "gp", anyConnect = "anyconnect"
     
     var id: String {
         return self.rawValue
@@ -34,50 +35,59 @@ enum VPNProtocol: String, Equatable, CaseIterable {
     var name: String {
         switch self {
         case .globalProtect: return "GlobalProtect"
+        case .anyConnect: return "AnyConnect"
         }
     }
 }
 
 class VPNController: ObservableObject {
     @Published public var state: VPNState = .stopped
-    @Published public var proto: VPNProtocol = .globalProtect
+    @Published public var proto: VPNProtocol = .anyConnect
+    @EnvironmentObject var credentials: Credentials
     
     private var currentLogURL: URL?;
+    private var url: String?;
+    private var authMgr: AuthManager?;
+    private var authReqResp: AuthRequestResp?;
     
     func start(credentials: Credentials, save: Bool) {
+        
         if save {
             credentials.save()
         }
-        AppDelegate.shared.pinPopover = true
-        Self.killOpenConnect();
-        start(portal: credentials.portal, username: credentials.username, password: credentials.password) { succ in
-            AppDelegate.shared.pinPopover = false
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-                AppDelegate.shared.closePopover()
-            }
-        }
+        self.url = credentials.portal
+        self.authMgr = AuthManager(credentials: credentials, preAuthCallback: preAuthCallback, authCookieCallback: authCookieCallback, postAuthCallback: postAuthCallback)
+        self.authMgr!.pre_auth()
+        
+//        AppDelegate.shared.pinPopover = true
+//        Self.killOpenConnect();
+//        start(portal: credentials.portal, username: credentials.username, password: credentials.password) { succ in
+//            AppDelegate.shared.pinPopover = false
+//            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+//                AppDelegate.shared.closePopover()
+//            }
+//        }
     }
     
-    private func start(portal: String, username: String, password: String, _ onLaunch: @escaping (_ succ: Bool) -> Void) {
+    private func startvpn(portal: String, session_token: String?, server_cert_hash: String?, _ onLaunch: @escaping (_ succ: Bool) -> Void) {
         state = .processing
         AppDelegate.shared.vpnConnectionDidChange(connected: false)
+        
         // Prepare commands
         print("[openconnect] start")
-        // stdin to input password
-        let stdinPath = URL(fileURLWithPath: "\(NSTemporaryDirectory())/\(NSUUID().uuidString)");
-        try! password.write(to: stdinPath, atomically: true, encoding: .utf8)
-        let stdin = try! FileHandle(forReadingFrom: stdinPath)
+        var context = CustomContext(main)
+        var command : AsyncCommand?
         // stdout for logging
         let stdoutPath = URL(fileURLWithPath: "\(NSTemporaryDirectory())/\(NSUUID().uuidString)");
         try! "".write(to: stdoutPath, atomically: true, encoding: .utf8)
         let stdout = try! FileHandle(forReadingFrom: stdoutPath)
         currentLogURL = stdoutPath
         print("[openconnect] log: \(stdoutPath.path)")
-        // Run
-        var context = CustomContext(main)
-        context.stdin = FileHandleStream(stdin, encoding: .utf8)
-        let shellCommand = "/usr/local/bin/openconnect --protocol=\(proto.id) \(portal) -u \(username) --passwd-on-stdin"
-        let command = context.runAsync(bash: "\(shellCommand) &> \(stdoutPath.path)")
+        let shellCommand = """
+        osascript -e \'do shell script \"openconnect -b -C \(session_token!) --servercert=\(server_cert_hash!) \(self.url!)/SAML\" with prompt \"Start OpenConnect on privileged mode\" with administrator privileges\'
+        """
+        print(shellCommand)
+        command = context.runAsync(bash: "\(shellCommand) &> \(stdoutPath.path)")
         print("[openconnect] cmd: \(shellCommand)")
         // Launch callback
         var launched = false;
@@ -87,7 +97,7 @@ class VPNController: ObservableObject {
             onLaunch(true)
         }
         // Completion callback
-        command.onCompletion { _ in
+        command?.onCompletion { _ in
             if self.state != .stopped {
                 DispatchQueue.main.async {
                     if self.state != .stopped {
@@ -99,10 +109,38 @@ class VPNController: ObservableObject {
             if !launched {
                 onLaunch(false)
             }
-            try? stdin.close()
             try? stdout.close()
             print("[openconnect] completed")
         }
+    }
+    
+    func preAuthCallback(authResp: AuthRequestResp?) -> Void {
+        self.authReqResp = authResp
+        if authResp!.auth_error == nil {
+            state = .webauth
+        }
+    }
+    
+    func authCookieCallback(cookie: HTTPCookie?) -> Void {
+        self.state = .processing
+        AppDelegate.shared.pinPopover = false
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                        AppDelegate.shared.closePopover()
+        }
+        self.authMgr!.finish_auth(authReqResp: self.authReqResp, cookie: cookie)
+    }
+    
+    func postAuthCallback(authResp: AuthCompleteResp?) -> Void  {
+        let session_token = authResp?.session_token
+        let server_cert_hash = authResp?.server_cert_hash
+        Self.killOpenConnect();
+        startvpn(portal: self.url!, session_token: session_token, server_cert_hash: server_cert_hash) { succ in
+            AppDelegate.shared.pinPopover = false
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                AppDelegate.shared.closePopover()
+            }
+        }
+        
     }
     
     func watchLaunch(file: FileHandle, callback: @escaping () -> Void) {
@@ -135,7 +173,7 @@ class VPNController: ObservableObject {
     
     static func killOpenConnect() {
         print("[openconnect] kill")
-        run("pkill", "-9", "openconnect");
+        run("pkill", "openconnect");
     }
     
     func openLogFile() {
@@ -151,6 +189,13 @@ class Credentials: ObservableObject {
     @Published public var portal: String
     @Published public var username: String
     @Published public var password: String
+    public var preauth: AuthRequestResp? = nil
+    public var finalauth: AuthCompleteResp? = nil
+    public var samlv2: Bool = false
+    @Published var samlv2Token: HTTPCookie?
+    public var preAuthCallback: ((AuthRequestResp?) -> ())? = nil
+    public var authCookieCallback: ((HTTPCookie?) -> ())? = nil
+    public var postAuthCallback: ((AuthCompleteResp?) -> ())? = nil
     
     init() {
         if let data = KeychainService.shared.load() {
@@ -158,7 +203,7 @@ class Credentials: ObservableObject {
             password = data.password
             portal = data.portal
         } else {
-            portal = "student-access.anu.edu.au"
+            portal = "***REMOVED***"
             username = ""
             password = ""
         }
@@ -178,7 +223,7 @@ struct CredentialsData {
 class KeychainService: NSObject {
     public static let shared = KeychainService();
     
-    private static let server = "swift-connect.wenyu.me"
+    private static let server = ""
     
     func insertOrUpdate(credentials: CredentialsData) -> Bool {
         let username = credentials.username
