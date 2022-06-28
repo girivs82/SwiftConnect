@@ -43,6 +43,7 @@ enum VPNProtocol: String, Equatable, CaseIterable {
 class VPNController: ObservableObject {
     @Published public var state: VPNState = .stopped
     @Published public var proto: VPNProtocol = .anyConnect
+    @Published public var openconnectPath: String = "/opt/homebrew/bin/openconnect"
     @EnvironmentObject var credentials: Credentials
     
     private var currentLogURL: URL?;
@@ -58,46 +59,34 @@ class VPNController: ObservableObject {
         self.url = credentials.portal
         self.authMgr = AuthManager(credentials: credentials, preAuthCallback: preAuthCallback, authCookieCallback: authCookieCallback, postAuthCallback: postAuthCallback)
         self.authMgr!.pre_auth()
-        
-//        AppDelegate.shared.pinPopover = true
-//        Self.killOpenConnect();
-//        start(portal: credentials.portal, username: credentials.username, password: credentials.password) { succ in
-//            AppDelegate.shared.pinPopover = false
-//            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-//                AppDelegate.shared.closePopover()
-//            }
-//        }
     }
     
-    private func startvpn(portal: String, session_token: String?, server_cert_hash: String?, _ onLaunch: @escaping (_ succ: Bool) -> Void) {
+    public func startvpn(portal: String?, session_token: String?, server_cert_hash: String?, _ onLaunch: @escaping (_ succ: Bool) -> Void) {
         state = .processing
         AppDelegate.shared.vpnConnectionDidChange(connected: false)
         
         // Prepare commands
         print("[openconnect] start")
-        var context = CustomContext(main)
-        var command : AsyncCommand?
+        
+        // stdin to input cookie
+        let stdinPath = URL(fileURLWithPath: "\(NSTemporaryDirectory())/\(NSUUID().uuidString)");
+        try! session_token?.write(to: stdinPath, atomically: true, encoding: .utf8)
+        let stdin = try! FileHandle(forReadingFrom: stdinPath)
         // stdout for logging
         let stdoutPath = URL(fileURLWithPath: "\(NSTemporaryDirectory())/\(NSUUID().uuidString)");
         try! "".write(to: stdoutPath, atomically: true, encoding: .utf8)
         let stdout = try! FileHandle(forReadingFrom: stdoutPath)
         currentLogURL = stdoutPath
         print("[openconnect] log: \(stdoutPath.path)")
+        print("[openconnect] log: \(stdinPath.path)")
+        // Run
+        var context = CustomContext(main)
+        context.stdin = FileHandleStream(stdin, encoding: .utf8)
         let shellCommand = """
-        osascript -e \'do shell script \"openconnect -b -C \(session_token!) --servercert=\(server_cert_hash!) \(self.url!)/SAML\" with prompt \"Start OpenConnect on privileged mode\" with administrator privileges\'
+        osascript -e \'do shell script \"\(openconnectPath) -C \(session_token!) --servercert=\(server_cert_hash!) \(self.url!)/SAML\" with prompt \"Start OpenConnect on privileged mode\" with administrator privileges\'
         """
-        print(shellCommand)
-        command = context.runAsync(bash: "\(shellCommand) &> \(stdoutPath.path)")
-        print("[openconnect] cmd: \(shellCommand)")
-        // Launch callback
         var launched = false;
-        watchLaunch(file: stdout) {
-            print("[openconnect] launched")
-            launched = true;
-            onLaunch(true)
-        }
-        // Completion callback
-        command?.onCompletion { _ in
+        _ = context.runAsync(bash: "\(shellCommand) &> \(stdoutPath.path)").onCompletion { _ in
             if self.state != .stopped {
                 DispatchQueue.main.async {
                     if self.state != .stopped {
@@ -112,6 +101,19 @@ class VPNController: ObservableObject {
             try? stdout.close()
             print("[openconnect] completed")
         }
+        print("[openconnect] cmd: \(shellCommand)")
+        // Launch callback
+        
+        if self.state == .processing {
+            self.state = .launched
+            AppDelegate.shared.vpnConnectionDidChange(connected: true)
+        }
+        
+//        watchLaunch(file: stdout) {
+//            print("[openconnect] launched")
+//            launched = true;
+//            onLaunch(true)
+//        }
     }
     
     func preAuthCallback(authResp: AuthRequestResp?) -> Void {
@@ -133,14 +135,12 @@ class VPNController: ObservableObject {
     func postAuthCallback(authResp: AuthCompleteResp?) -> Void  {
         let session_token = authResp?.session_token
         let server_cert_hash = authResp?.server_cert_hash
-        Self.killOpenConnect();
         startvpn(portal: self.url!, session_token: session_token, server_cert_hash: server_cert_hash) { succ in
             AppDelegate.shared.pinPopover = false
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
                 AppDelegate.shared.closePopover()
             }
         }
-        
     }
     
     func watchLaunch(file: FileHandle, callback: @escaping () -> Void) {
@@ -171,9 +171,13 @@ class VPNController: ObservableObject {
         AppDelegate.shared.vpnConnectionDidChange(connected: false)
     }
     
-    static func killOpenConnect() {
-        print("[openconnect] kill")
-        run("pkill", "openconnect");
+    static func killOpenConnect(force: Bool = false) {
+        let kill_signal = (force) ? "-SIGKILL" : "-SIGTERM"
+        let shellCommand = """
+        osascript -e \'do shell script \"pkill \(kill_signal) openconnect\" with prompt \"Kill OpenConnect on privileged mode\" with administrator privileges\'
+        """
+        runAsync(bash: "\(shellCommand) &> /dev/null").onCompletion { _ in
+        }
     }
     
     func openLogFile() {

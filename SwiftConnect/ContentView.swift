@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-let windowSize = CGSize(width: 200, height: 230)
+let windowSize = CGSize(width: 250, height: 230)
 let windowInsets = EdgeInsets(top: 30, leading: 30, bottom: 30, trailing: 30)
 
 struct VisualEffect: NSViewRepresentable {
@@ -100,15 +100,21 @@ struct VPNLoginScreen: View {
             }
             Toggle(isOn: $saveToKeychain) {
                 Text("Save to Keychain")
-            }.toggleStyle(CheckboxToggleStyle())
+            }.toggleStyle(CheckboxToggleStyle()).disabled(true)
             Spacer().frame(height: 25)
             Toggle(isOn: $useSAMLv2) {
                 Text("SAMLv2")
             }.toggleStyle(CheckboxToggleStyle())
             Spacer().frame(height: 25)
+            HStack {
+                Text("Path:")
+                TextField("Path", text: $vpn.openconnectPath )
+            }
+            Spacer().frame(height: 25)
             Button(action: {
                 self.credentials.samlv2 = self.useSAMLv2
                 vpn.start(credentials: credentials, save: saveToKeychain)
+                //vpn.startvpn(portal: "", session_token: "", server_cert_hash: "") { succ in }
             }) {
                 Text("Connect")
             }.keyboardShortcut(.defaultAction)
@@ -150,7 +156,7 @@ struct VPNWebAuthScreen: View {
                     }
                 }) {
                     Text("Open with Safari")
-                }
+                }.disabled(true)
             }
             //The webpage itself
             AuthWebView(viewModel: model)
