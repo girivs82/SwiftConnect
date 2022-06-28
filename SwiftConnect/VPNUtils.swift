@@ -67,7 +67,7 @@ class VPNController: ObservableObject {
         
         // Prepare commands
         print("[openconnect] start")
-        
+        Self.killOpenConnect()
         // stdin to input cookie
         let stdinPath = URL(fileURLWithPath: "\(NSTemporaryDirectory())/\(NSUUID().uuidString)");
         try! session_token?.write(to: stdinPath, atomically: true, encoding: .utf8)
@@ -82,9 +82,7 @@ class VPNController: ObservableObject {
         // Run
         var context = CustomContext(main)
         context.stdin = FileHandleStream(stdin, encoding: .utf8)
-        let shellCommand = """
-        osascript -e \'do shell script \"\(openconnectPath) -C \(session_token!) --servercert=\(server_cert_hash!) \(self.url!)/SAML\" with prompt \"Start OpenConnect on privileged mode\" with administrator privileges\'
-        """
+        let shellCommand = "sudo \(openconnectPath) --cookie-on-stdin --servercert=\(server_cert_hash!) \(portal!)/SAML"
         var launched = false;
         _ = context.runAsync(bash: "\(shellCommand) &> \(stdoutPath.path)").onCompletion { _ in
             if self.state != .stopped {
@@ -102,18 +100,12 @@ class VPNController: ObservableObject {
             print("[openconnect] completed")
         }
         print("[openconnect] cmd: \(shellCommand)")
-        // Launch callback
         
-        if self.state == .processing {
-            self.state = .launched
-            AppDelegate.shared.vpnConnectionDidChange(connected: true)
+        watchLaunch(file: stdout) {
+            print("[openconnect] launched")
+            launched = true;
+            onLaunch(true)
         }
-        
-//        watchLaunch(file: stdout) {
-//            print("[openconnect] launched")
-//            launched = true;
-//            onLaunch(true)
-//        }
     }
     
     func preAuthCallback(authResp: AuthRequestResp?) -> Void {
@@ -173,11 +165,7 @@ class VPNController: ObservableObject {
     
     static func killOpenConnect(force: Bool = false) {
         let kill_signal = (force) ? "-SIGKILL" : "-SIGTERM"
-        let shellCommand = """
-        osascript -e \'do shell script \"pkill \(kill_signal) openconnect\" with prompt \"Kill OpenConnect on privileged mode\" with administrator privileges\'
-        """
-        runAsync(bash: "\(shellCommand) &> /dev/null").onCompletion { _ in
-        }
+        run("sudo", "pkill", kill_signal, "openconnect")
     }
     
     func openLogFile() {
