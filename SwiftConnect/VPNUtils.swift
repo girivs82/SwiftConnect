@@ -209,7 +209,7 @@ class Credentials: ObservableObject {
             password = data.password
             portal = data.portal
         } else {
-            portal = "***REMOVED***"
+            portal = ""
             username = ""
             password = ""
         }
