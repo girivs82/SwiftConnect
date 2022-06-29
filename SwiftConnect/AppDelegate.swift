@@ -102,15 +102,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         return getuid() == 0;
     }
     
-    func openSAMLWebAuth() {
-        let popover = NSPopover()
-        let contentView = ContentView()
-        popover.contentSize = NSSize(width: 800, height: 800)
-        popover.contentViewController = NSHostingController(rootView: contentView)
-        popover.behavior = .transient
-        popover.delegate = self
-    }
-    
     func relaunch() {
         let bin = Bundle.main.executablePath!;
         print("Relaunch: sudo \(bin)");

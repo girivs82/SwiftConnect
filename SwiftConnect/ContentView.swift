@@ -57,30 +57,10 @@ struct VPNLaunchedScreen_Previews: PreviewProvider {
     }
 }
 
-struct VPNProgressingScreen: View {
-    @EnvironmentObject var vpn: VPNController
-    
-    var body: some View {
-            VStack {
-                Text("Connecting...")
-                Spacer().frame(height: 25)
-                Button(action: { vpn.kill() }) {
-                    Text("Disconnect")
-                }.keyboardShortcut(.defaultAction)
-        }
-        .environmentObject(vpn)
-    }
-}
-
-struct VPNProgressingScreen_Previews: PreviewProvider {
-    static var previews: some View {
-        VPNProgressingScreen().environmentObject(VPNController())
-    }
-}
-
 struct VPNLoginScreen: View {
     @EnvironmentObject var vpn: VPNController
     @EnvironmentObject var credentials: Credentials
+    @EnvironmentObject var network: NetworkPathMonitor
     @State private var saveToKeychain = false
     @State private var useSAMLv2 = true
     
@@ -93,28 +73,23 @@ struct VPNLoginScreen: View {
             }
             TextField("Portal", text: $credentials.portal)
             if !useSAMLv2 {
+                Spacer().frame(height: 25)
                 TextField("Username", text: $credentials.username)
                 SecureField("Password", text: $credentials.password).onSubmit {
                     vpn.start(credentials: credentials, save: saveToKeychain)
                 }
             }
+            Spacer().frame(height: 25)
             Toggle(isOn: $saveToKeychain) {
                 Text("Save to Keychain")
             }.toggleStyle(CheckboxToggleStyle()).disabled(true)
-            Spacer().frame(height: 25)
             Toggle(isOn: $useSAMLv2) {
                 Text("SAMLv2")
             }.toggleStyle(CheckboxToggleStyle())
             Spacer().frame(height: 25)
-            HStack {
-                Text("Path:")
-                TextField("Path", text: $vpn.openconnectPath )
-            }
-            Spacer().frame(height: 25)
             Button(action: {
                 self.credentials.samlv2 = self.useSAMLv2
                 vpn.start(credentials: credentials, save: saveToKeychain)
-                //vpn.startvpn(portal: "", session_token: "", server_cert_hash: "") { succ in }
             }) {
                 Text("Connect")
             }.keyboardShortcut(.defaultAction)
@@ -160,7 +135,7 @@ struct VPNWebAuthScreen: View {
             }
             //The webpage itself
             AuthWebView(viewModel: model)
-        }.frame(width: 800, height: 450, alignment: .bottom)
+        }
             .padding(5.0)
 
     }
@@ -177,14 +152,20 @@ struct VPNWebAuthScreen_Previews: PreviewProvider {
 struct ContentView: View {
     @StateObject var vpn = VPNController()
     @StateObject var credentials = Credentials()
+    @StateObject var network = NetworkPathMonitor()
     
     var body: some View {
         VStack {
-            switch vpn.state {
-            case .stopped: VPNLoginScreen().frame(width: windowSize.width, height: windowSize.height)
-            case .webauth: VPNWebAuthScreen(mesgURL: URL(string: self.credentials.preauth!.login_url!)!).frame(width: 800, height: 450)
-            case .processing: ProgressView().frame(width: windowSize.width, height: windowSize.height)
-            case .launched: VPNLaunchedScreen().frame(width: windowSize.width, height: windowSize.height)
+            switch (vpn.state, network.tun_intf) {
+            case (.stopped, false): VPNLoginScreen().frame(width: windowSize.width, height: windowSize.height)
+            case (.stopped, true): VPNLaunchedScreen().frame(width: windowSize.width, height: windowSize.height)
+            case (.webauth, true): VPNWebAuthScreen(mesgURL: URL(string: self.credentials.preauth!.login_url!)!).frame(width: 800, height: 450)
+            case (.webauth, false): VPNWebAuthScreen(mesgURL: URL(string: self.credentials.preauth!.login_url!)!).frame(width: 800, height: 450)
+            case (.processing, false): ProgressView().frame(width: windowSize.width, height: windowSize.height)
+            case (.processing, true): ProgressView().frame(width: windowSize.width, height: windowSize.height)
+            case (.launched, true): VPNLaunchedScreen().frame(width: windowSize.width, height: windowSize.height)
+            case (.launched, false): VPNLoginScreen().frame(width: windowSize.width, height: windowSize.height)
+            default: VPNLoginScreen().frame(width: windowSize.width, height: windowSize.height)
             }
         }
         .padding(windowInsets)

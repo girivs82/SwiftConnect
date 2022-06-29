@@ -10,6 +10,15 @@ import SwiftShell
 import SwiftUI
 import Security
 
+extension Dictionary where Key:Hashable {
+    public func filterToDictionary <C: Collection> (keys: C) -> [Key:Value]
+        where C.Iterator.Element == Key {
+
+        var result = [Key:Value](minimumCapacity: keys.count)
+        for key in keys { result[key] = self[key] }
+        return result
+    }
+}
 
 
 enum VPNState {
@@ -43,7 +52,6 @@ enum VPNProtocol: String, Equatable, CaseIterable {
 class VPNController: ObservableObject {
     @Published public var state: VPNState = .stopped
     @Published public var proto: VPNProtocol = .anyConnect
-    @Published public var openconnectPath: String = "/opt/homebrew/bin/openconnect"
     @EnvironmentObject var credentials: Credentials
     
     private var currentLogURL: URL?;
@@ -81,8 +89,14 @@ class VPNController: ObservableObject {
         print("[openconnect] log: \(stdinPath.path)")
         // Run
         var context = CustomContext(main)
+        // Prepare an environment as close to a new OS X user account as possible with the exception of PATH variable, where /opt/homebrew/bin is also added to discover openconnect
+//        let cleanenvvars = ["TERM_PROGRAM", "SHELL", "TERM", "TMPDIR", "Apple_PubSub_Socket_Render", "TERM_PROGRAM_VERSION", "TERM_SESSION_ID", "USER", "SSH_AUTH_SOCK", "__CF_USER_TEXT_ENCODING", "XPC_FLAGS", "XPC_SERVICE_NAME", "SHLVL", "HOME", "LOGNAME", "LC_CTYPE", "_"]
+//        context.env = context.env.filterToDictionary(keys: cleanenvvars)
+        context.env["PATH"] = "/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/opt/homebrew/bin"
+        // Add SUDO_ASKPASS because we need a graphical password entry mechanism. Will be replaced with keychain entry
+        //context.env["SUDO_ASKPASS"] = "/opt/homebrew/opt/ssh-askpass/bin/ssh-askpass"
         context.stdin = FileHandleStream(stdin, encoding: .utf8)
-        let shellCommand = "sudo \(openconnectPath) --cookie-on-stdin --servercert=\(server_cert_hash!) \(portal!)/SAML"
+        let shellCommand = "sudo openconnect --cookie-on-stdin --servercert=\(server_cert_hash!) \(portal!)/SAML"
         var launched = false;
         _ = context.runAsync(bash: "\(shellCommand) &> \(stdoutPath.path)").onCompletion { _ in
             if self.state != .stopped {
