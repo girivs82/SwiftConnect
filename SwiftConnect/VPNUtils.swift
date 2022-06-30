@@ -55,6 +55,8 @@ class VPNController: ObservableObject {
     @EnvironmentObject var credentials: Credentials
     
     private var currentLogURL: URL?;
+    static var stdinPath = URL(fileURLWithPath: "\(NSTemporaryDirectory())/\(NSUUID().uuidString)");
+    static var sudo_pass: String?;
     private var url: String?;
     private var sudo_password: String?
     private var authMgr: AuthManager?;
@@ -68,6 +70,7 @@ class VPNController: ObservableObject {
         }
         self.url = credentials.portal
         self.sudo_password = credentials.sudo_password
+        VPNController.sudo_pass = self.sudo_password
         self.authMgr = AuthManager(credentials: credentials, preAuthCallback: preAuthCallback, authCookieCallback: authCookieCallback, postAuthCallback: postAuthCallback)
         self.authMgr!.pre_auth()
     }
@@ -81,9 +84,8 @@ class VPNController: ObservableObject {
         //Self.killOpenConnect()
         // stdin to input cookie
         let stdinStr = self.sudo_password! + "\n"
-        let stdinPath = URL(fileURLWithPath: "\(NSTemporaryDirectory())/\(NSUUID().uuidString)");
-        try! stdinStr.write(to: stdinPath, atomically: true, encoding: .utf8)
-        let stdin = try! FileHandle(forReadingFrom: stdinPath)
+        try! stdinStr.write(to: Self.stdinPath, atomically: true, encoding: .utf8)
+        let stdin = try! FileHandle(forReadingFrom: Self.stdinPath)
         // stdout for logging
         let stdoutPath = URL(fileURLWithPath: "\(NSTemporaryDirectory())/\(NSUUID().uuidString)");
         try! "".write(to: stdoutPath, atomically: true, encoding: .utf8)
@@ -91,7 +93,7 @@ class VPNController: ObservableObject {
 
         currentLogURL = stdoutPath
         print("[openconnect] stdout log: \(stdoutPath.path)")
-        //print("[openconnect] stdin pending: \(stdinPath.path)") //REMOVE THIS: sensitive information in stdin should not be logged
+        print("[openconnect] stdin pending: \(VPNController.stdinPath.path)") //REMOVE THIS: sensitive information in stdin should not be logged
         // Run
         var context = CustomContext(main)
         // Prepare an environment as close to a new OS X user account as possible with the exception of PATH variable, where /opt/homebrew/bin is also added to discover openconnect
@@ -102,10 +104,12 @@ class VPNController: ObservableObject {
         let shellCommand = "sudo -S openconnect -C \(session_token!) --servercert=\(server_cert_hash!) \(portal!)/SAML"
         self.runCommand = context.runAsync(bash: "\(shellCommand) &> \(stdoutPath.path)").onCompletion { _ in
             if self.state != .stopped {
-                try! stdinStr.write(to: stdinPath, atomically: true, encoding: .utf8)
-                let stdin = try! FileHandle(forReadingFrom: stdinPath)
+                try! "".write(to: Self.stdinPath, atomically: true, encoding: .utf8)
+                try! stdinStr.write(to: Self.stdinPath, atomically: true, encoding: .utf8)
+                let stdin = try! FileHandle(forReadingFrom: Self.stdinPath)
                 context.stdin = FileHandleStream(stdin, encoding: .utf8)
                 run("sudo", "-S", "pkill", "openconnect")
+                try! "".write(to: Self.stdinPath, atomically: true, encoding: .utf8)
                 try? stdin.close()
                 DispatchQueue.main.async {
                     AppDelegate.shared.vpnConnectionDidChange(connected: false)
@@ -120,6 +124,7 @@ class VPNController: ObservableObject {
             try? stdout.close()
             print("[openconnect] completed")
         }
+        try! "".write(to: Self.stdinPath, atomically: true, encoding: .utf8)
         print("[openconnect] launched")
         print("[openconnect] cmd: \(shellCommand)")
         AppDelegate.shared.pinPopover = false
@@ -175,6 +180,29 @@ class VPNController: ObservableObject {
     func killOpenConnect() {
         self.state = .processing
         self.runCommand?.stop()
+    }
+    
+    static func terminate() {
+        if let _ = VPNController.sudo_pass {
+            let stdinStr = VPNController.sudo_pass! + "\n"
+            var context = CustomContext(main)
+            try! "".write(to: Self.stdinPath, atomically: true, encoding: .utf8)
+            try! stdinStr.write(to: Self.stdinPath, atomically: true, encoding: .utf8)
+            let stdin = try! FileHandle(forReadingFrom: Self.stdinPath)
+            context.stdin = FileHandleStream(stdin, encoding: .utf8)
+            run("sudo", "-S", "pkill", "openconnect")
+            try! "".write(to: Self.stdinPath, atomically: true, encoding: .utf8)
+            try? stdin.close()
+        }
+
+        if FileManager.default.fileExists(atPath: VPNController.stdinPath.path) {
+            // delete file
+            do {
+                try FileManager.default.removeItem(atPath: VPNController.stdinPath.path)
+            } catch {
+                print("Could not delete file, probably read-only filesystem")
+            }
+        }
     }
     
     func openLogFile() {
