@@ -86,23 +86,5 @@ class Coordinator: NSObject, WKNavigationDelegate {
 
     func webView(_ web: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) { }
 
-    func webView(_ web: WKWebView, decidePolicyFor navigationAction: WKNavigationAction, decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
-        if(navigationAction.navigationType == .other) {
-                    if let redirectedUrl = navigationAction.request.url {
-                        
-                        //After redirect
-                    }
-                    
-                }
-        decisionHandler(.allow)
-    }
-    
-    func webView(_ web: WKWebView, decidePolicyFor navigationResponse: WKNavigationResponse, decisionHandler: @escaping (WKNavigationResponsePolicy) -> Void) {
-        if let response = navigationResponse.response as? HTTPURLResponse {
-            let headers = response.allHeaderFields
-        }
-        decisionHandler(.allow)
-    }
-
 }
 

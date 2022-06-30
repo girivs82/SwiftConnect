@@ -52,7 +52,7 @@ class AuthManager {
     }
     
     private func createInitialAuthRequest() -> URLRequest {
-        var request = URLRequest(url: URL(string: self.credentials!.portal)!)
+        var request = URLRequest(url: URL(string: self.credentials!.portal!)!)
         request.setValue("AnyConnect Linux_64 4.7.00136", forHTTPHeaderField: "User-Agent")
         request.setValue("*/*", forHTTPHeaderField: "Accept")
         request.setValue("identity", forHTTPHeaderField: "Accept-Encoding")
@@ -89,7 +89,7 @@ class AuthManager {
     }
     
     private func createFinalAuthRequest(authReqResp: AuthRequestResp?) -> URLRequest {
-        var request = URLRequest(url: URL(string: self.credentials!.portal)!)
+        var request = URLRequest(url: URL(string: self.credentials!.portal!)!)
         request.setValue("AnyConnect Linux_64 4.7.00136", forHTTPHeaderField: "User-Agent")
         request.setValue("*/*", forHTTPHeaderField: "Accept")
         request.setValue("identity", forHTTPHeaderField: "Accept-Encoding")
@@ -126,8 +126,6 @@ class AuthManager {
     }
     
     func sendPreAuthRequest(request: URLRequest) -> Void {
-        let session = URLSession(configuration:URLSessionConfiguration.default)
-        
         let task = URLSession.shared.dataTask(with: request) {
             data,response,error in
             
@@ -171,9 +169,7 @@ class AuthManager {
           task.resume()
     }
     
-    func sendFinalAuthRequest(request: URLRequest) -> Void {
-        let session = URLSession(configuration:URLSessionConfiguration.default)
-        
+    func sendFinalAuthRequest(request: URLRequest) -> Void {        
         let task = URLSession.shared.dataTask(with: request) {
             data,response,error in
             

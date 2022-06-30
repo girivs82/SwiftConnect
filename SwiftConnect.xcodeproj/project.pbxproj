@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		32567B17286C12190099C11A /* Network.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32567B16286C12190099C11A /* Network.swift */; };
+		32567B19286D742B0099C11A /* Utils.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32567B18286D742B0099C11A /* Utils.swift */; };
 		3272F74D2867278400223D4F /* AuthManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3272F74C2867278400223D4F /* AuthManager.swift */; };
 		32979BD62868B78000C56C63 /* WebView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32979BD52868B78000C56C63 /* WebView.swift */; };
 		EFC2DB1D276041FB00E051A1 /* SwiftConnectApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = EFC2DB1C276041FB00E051A1 /* SwiftConnectApp.swift */; };
@@ -21,6 +22,7 @@
 
 /* Begin PBXFileReference section */
 		32567B16286C12190099C11A /* Network.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Network.swift; sourceTree = "<group>"; };
+		32567B18286D742B0099C11A /* Utils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Utils.swift; sourceTree = "<group>"; };
 		3272F74C2867278400223D4F /* AuthManager.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AuthManager.swift; sourceTree = "<group>"; };
 		32979BD52868B78000C56C63 /* WebView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = WebView.swift; sourceTree = "<group>"; };
 		EFC2DB19276041FB00E051A1 /* SwiftConnect.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SwiftConnect.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -49,6 +51,7 @@
 		EFC2DB10276041FB00E051A1 = {
 			isa = PBXGroup;
 			children = (
+				32567B18286D742B0099C11A /* Utils.swift */,
 				EFC2DB1B276041FB00E051A1 /* SwiftConnect */,
 				EFC2DB1A276041FB00E051A1 /* Products */,
 			);
@@ -171,6 +174,7 @@
 				EFC2DB2C2760527800E051A1 /* VPNUtils.swift in Sources */,
 				32567B17286C12190099C11A /* Network.swift in Sources */,
 				3272F74D2867278400223D4F /* AuthManager.swift in Sources */,
+				32567B19286D742B0099C11A /* Utils.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

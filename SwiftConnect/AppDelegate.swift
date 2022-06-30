@@ -67,7 +67,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
 
     func applicationWillTerminate(_ aNotification: Notification) {
         // Insert code here to tear down your application
-        VPNController.killOpenConnect();
+        //VPNController.kill();
     }
     
     func popoverWillShow(_ notification: Notification) {

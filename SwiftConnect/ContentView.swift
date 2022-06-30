@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-let windowSize = CGSize(width: 250, height: 230)
+let windowSize = CGSize(width: 250, height: 350)
 let windowInsets = EdgeInsets(top: 30, leading: 30, bottom: 30, trailing: 30)
 
 struct VisualEffect: NSViewRepresentable {
@@ -33,7 +33,7 @@ struct VPNLaunchedScreen: View {
                     .scaledToFit()
                 Text("🌐 VPN Connected!")
                 Spacer().frame(height: 25)
-                Button(action: { vpn.kill() }) {
+                Button(action: { vpn.killOpenConnect() }) {
                     Text("Disconnect")
                 }.keyboardShortcut(.defaultAction)
         }
@@ -61,28 +61,36 @@ struct VPNLoginScreen: View {
     @EnvironmentObject var vpn: VPNController
     @EnvironmentObject var credentials: Credentials
     @EnvironmentObject var network: NetworkPathMonitor
-    @State private var saveToKeychain = false
+    @State private var saveToKeychain = true
     @State private var useSAMLv2 = true
     
     var body: some View {
         VStack {
-            Picker(selection: $vpn.proto, label: EmptyView()) {
-                ForEach(VPNProtocol.allCases, id: \.self) {
-                    Text($0.name)
+            Group {
+                Picker(selection: $vpn.proto, label: EmptyView()) {
+                    ForEach(VPNProtocol.allCases, id: \.self) {
+                        Text($0.name)
+                    }
                 }
+                Text("Portal")
+                TextField("Portal", text: $credentials.portal ?? "")
             }
-            TextField("Portal", text: $credentials.portal)
             if !useSAMLv2 {
-                Spacer().frame(height: 25)
-                TextField("Username", text: $credentials.username)
-                SecureField("Password", text: $credentials.password).onSubmit {
-                    vpn.start(credentials: credentials, save: saveToKeychain)
+                Group {
+                    Spacer().frame(height: 25)
+                    Text("Username")
+                    TextField("Username", text: $credentials.username ?? "")
+                    Text("Password")
+                    SecureField("Password", text: $credentials.password ?? "")
                 }
             }
             Spacer().frame(height: 25)
+            Text("Superuser Password")
+            SecureField("Sudo Password", text: $credentials.sudo_password ?? "")
+            Spacer().frame(height: 25)
             Toggle(isOn: $saveToKeychain) {
                 Text("Save to Keychain")
-            }.toggleStyle(CheckboxToggleStyle()).disabled(true)
+            }.toggleStyle(CheckboxToggleStyle())
             Toggle(isOn: $useSAMLv2) {
                 Text("SAMLv2")
             }.toggleStyle(CheckboxToggleStyle())
@@ -159,7 +167,7 @@ struct ContentView: View {
             switch (vpn.state, network.tun_intf) {
             case (.stopped, false): VPNLoginScreen().frame(width: windowSize.width, height: windowSize.height)
             case (.stopped, true): VPNLaunchedScreen().frame(width: windowSize.width, height: windowSize.height)
-            case (.webauth, true): VPNWebAuthScreen(mesgURL: URL(string: self.credentials.preauth!.login_url!)!).frame(width: 800, height: 450)
+            case (.webauth, true): VPNLaunchedScreen().frame(width: windowSize.width, height: windowSize.height)
             case (.webauth, false): VPNWebAuthScreen(mesgURL: URL(string: self.credentials.preauth!.login_url!)!).frame(width: 800, height: 450)
             case (.processing, false): ProgressView().frame(width: windowSize.width, height: windowSize.height)
             case (.processing, true): ProgressView().frame(width: windowSize.width, height: windowSize.height)
