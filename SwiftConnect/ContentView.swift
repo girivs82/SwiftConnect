@@ -23,6 +23,7 @@ struct VisualEffect: NSViewRepresentable {
 }
 
 struct VPNLaunchedScreen: View {
+    @EnvironmentObject var credentials: Credentials
     @EnvironmentObject var vpn: VPNController
     
     var body: some View {
@@ -33,7 +34,7 @@ struct VPNLaunchedScreen: View {
                     .scaledToFit()
                 Text("🌐 VPN Connected!")
                 Spacer().frame(height: 25)
-                Button(action: { vpn.killOpenConnect() }) {
+                Button(action: { vpn.terminate() }) {
                     Text("Disconnect")
                 }.keyboardShortcut(.defaultAction)
         }
@@ -44,7 +45,7 @@ struct VPNLaunchedScreen: View {
         }.buttonStyle(PlainButtonStyle())
                 .position(x: 155, y: 190)
         }
-        .environmentObject(vpn)
+        .environmentObject(credentials)
     }
 }
 
@@ -102,7 +103,7 @@ struct VPNLoginScreen: View {
                 Text("Connect")
             }.keyboardShortcut(.defaultAction)
              .disabled(!useSAMLv2)
-        }
+        }.environmentObject(vpn)
     }
 }
 
@@ -158,28 +159,22 @@ struct VPNWebAuthScreen_Previews: PreviewProvider {
 
 
 struct ContentView: View {
-    @StateObject var vpn = VPNController()
+    @StateObject var vpn = VPNController.shared
     @StateObject var credentials = Credentials()
-    @StateObject var network = NetworkPathMonitor()
     
     var body: some View {
         VStack {
-            switch (vpn.state, network.tun_intf) {
-            case (.stopped, false): VPNLoginScreen().frame(width: windowSize.width, height: windowSize.height)
-            case (.stopped, true): VPNLaunchedScreen().frame(width: windowSize.width, height: windowSize.height)
-            case (.webauth, true): VPNLaunchedScreen().frame(width: windowSize.width, height: windowSize.height)
-            case (.webauth, false): VPNWebAuthScreen(mesgURL: URL(string: self.credentials.preauth!.login_url!)!).frame(width: 800, height: 450)
-            case (.processing, false): ProgressView().frame(width: windowSize.width, height: windowSize.height)
-            case (.processing, true): ProgressView().frame(width: windowSize.width, height: windowSize.height)
-            case (.launched, true): VPNLaunchedScreen().frame(width: windowSize.width, height: windowSize.height)
-            case (.launched, false): VPNLoginScreen().frame(width: windowSize.width, height: windowSize.height)
-            default: VPNLoginScreen().frame(width: windowSize.width, height: windowSize.height)
+            switch (VPNController.shared.state) {
+            case .stopped: VPNLoginScreen().frame(width: windowSize.width, height: windowSize.height)
+            case .webauth: VPNWebAuthScreen(mesgURL: URL(string: self.credentials.preauth!.login_url!)!).frame(width: 800, height: 450)
+            case .processing: ProgressView().frame(width: windowSize.width, height: windowSize.height)
+            case .launched: VPNLaunchedScreen().frame(width: windowSize.width, height: windowSize.height)
             }
         }
         .padding(windowInsets)
         .background(VisualEffect())
-        .environmentObject(vpn)
         .environmentObject(credentials)
+        .environmentObject(vpn)
     }
 }
 

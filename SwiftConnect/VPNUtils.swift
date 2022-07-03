@@ -53,7 +53,7 @@ class VPNController: ObservableObject {
     @Published public var state: VPNState = .stopped
     @Published public var proto: VPNProtocol = .anyConnect
     @EnvironmentObject var credentials: Credentials
-    
+
     private var currentLogURL: URL?;
     static var stdinPath = URL(fileURLWithPath: "\(NSTemporaryDirectory())/\(NSUUID().uuidString)");
     static var sudo_pass: String?;
@@ -62,6 +62,9 @@ class VPNController: ObservableObject {
     private var authMgr: AuthManager?;
     private var authReqResp: AuthRequestResp?;
     private var runCommand : AsyncCommand?;
+    var context = CustomContext(main)
+    
+    static let shared = VPNController()
     
     func start(credentials: Credentials, save: Bool) {
         
@@ -77,7 +80,6 @@ class VPNController: ObservableObject {
     
     public func startvpn(portal: String?, session_token: String?, server_cert_hash: String?, _ onLaunch: @escaping (_ succ: Bool) -> Void) {
         state = .processing
-        AppDelegate.shared.vpnConnectionDidChange(connected: false)
         
         // Prepare commands
         print("[openconnect] start")
@@ -95,7 +97,7 @@ class VPNController: ObservableObject {
         print("[openconnect] stdout log: \(stdoutPath.path)")
         print("[openconnect] stdin pending: \(VPNController.stdinPath.path)") //REMOVE THIS: sensitive information in stdin should not be logged
         // Run
-        var context = CustomContext(main)
+        
         // Prepare an environment as close to a new OS X user account as possible with the exception of PATH variable, where /opt/homebrew/bin is also added to discover openconnect
         let cleanenvvars = ["TERM_PROGRAM", "SHELL", "TERM", "TMPDIR", "Apple_PubSub_Socket_Render", "TERM_PROGRAM_VERSION", "TERM_SESSION_ID", "USER", "SSH_AUTH_SOCK", "__CF_USER_TEXT_ENCODING", "XPC_FLAGS", "XPC_SERVICE_NAME", "SHLVL", "HOME", "LOGNAME", "LC_CTYPE", "_"]
         context.env = context.env.filterToDictionary(keys: cleanenvvars)
@@ -103,24 +105,8 @@ class VPNController: ObservableObject {
         context.stdin = FileHandleStream(stdin, encoding: .utf8)
         let shellCommand = "sudo -S openconnect -C \(session_token!) --servercert=\(server_cert_hash!) \(portal!)/SAML"
         self.runCommand = context.runAsync(bash: "\(shellCommand) &> \(stdoutPath.path)").onCompletion { _ in
-            if self.state != .stopped {
-                try! "".write(to: Self.stdinPath, atomically: true, encoding: .utf8)
-                try! stdinStr.write(to: Self.stdinPath, atomically: true, encoding: .utf8)
-                let stdin = try! FileHandle(forReadingFrom: Self.stdinPath)
-                context.stdin = FileHandleStream(stdin, encoding: .utf8)
-                run("sudo", "-S", "pkill", "openconnect")
-                try! "".write(to: Self.stdinPath, atomically: true, encoding: .utf8)
-                try? stdin.close()
-                DispatchQueue.main.async {
-                    AppDelegate.shared.vpnConnectionDidChange(connected: false)
-                }
-                DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-                    if self.state != .stopped {
-                        self.state = .stopped
-                        AppDelegate.shared.vpnConnectionDidChange(connected: false)
-                    }
-                }
-            }
+            try! "".write(to: Self.stdinPath, atomically: true, encoding: .utf8)
+            try? stdin.close()
             try? stdout.close()
             print("[openconnect] completed")
         }
@@ -128,13 +114,6 @@ class VPNController: ObservableObject {
         print("[openconnect] launched")
         print("[openconnect] cmd: \(shellCommand)")
         AppDelegate.shared.pinPopover = false
-        if self.state == .processing {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-                self.state = .launched
-                AppDelegate.shared.vpnConnectionDidChange(connected: true)
-            //AppDelegate.shared.closePopover()
-            }
-        }
     }
     
     func preAuthCallback(authResp: AuthRequestResp?) -> Void {
@@ -145,7 +124,7 @@ class VPNController: ObservableObject {
     }
     
     func authCookieCallback(cookie: HTTPCookie?) -> Void {
-        self.state = .processing
+        state = .processing
         AppDelegate.shared.pinPopover = false
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
                         AppDelegate.shared.closePopover()
@@ -177,30 +156,24 @@ class VPNController: ObservableObject {
         source.resume()
     }
     
-    func killOpenConnect() {
-        self.state = .processing
-        self.runCommand?.stop()
-    }
-    
-    static func terminate() {
-        if let _ = VPNController.sudo_pass {
-            let stdinStr = VPNController.sudo_pass! + "\n"
-            var context = CustomContext(main)
-            try! "".write(to: Self.stdinPath, atomically: true, encoding: .utf8)
-            try! stdinStr.write(to: Self.stdinPath, atomically: true, encoding: .utf8)
-            let stdin = try! FileHandle(forReadingFrom: Self.stdinPath)
-            context.stdin = FileHandleStream(stdin, encoding: .utf8)
-            run("sudo", "-S", "pkill", "openconnect")
+    func terminate() {
+        state = .processing
+        let sudo_password = Credentials().sudo_password! + "\n"
+        try! sudo_password.write(to: Self.stdinPath, atomically: true, encoding: .utf8)
+        var context = CustomContext(main)
+        let stdin = try! FileHandle(forReadingFrom: Self.stdinPath)
+        context.stdin = FileHandleStream(stdin, encoding: .utf8)
+        context.runAsync("sudo", "-S", "pkill", "openconnect").onCompletion { _ in
             try! "".write(to: Self.stdinPath, atomically: true, encoding: .utf8)
             try? stdin.close()
-        }
 
-        if FileManager.default.fileExists(atPath: VPNController.stdinPath.path) {
-            // delete file
-            do {
-                try FileManager.default.removeItem(atPath: VPNController.stdinPath.path)
-            } catch {
-                print("Could not delete file, probably read-only filesystem")
+            if FileManager.default.fileExists(atPath: VPNController.stdinPath.path) {
+                // delete file
+                do {
+                    try FileManager.default.removeItem(atPath: VPNController.stdinPath.path)
+                } catch {
+                    print("Could not delete file, probably read-only filesystem")
+                }
             }
         }
     }

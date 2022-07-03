@@ -120,7 +120,7 @@ class AuthManager {
         config_auth.addChild(authReqResp!.opaque)
         config_auth.addChild(auth)
         let httpBody = "<?xml version=\'1.0\' encoding=\'UTF-8\'?>" + httpbody.xmlString
-        print(httpBody)
+        //print(httpBody)
         request.httpBody = httpBody.data(using: .utf8)
         return request
     }
@@ -147,7 +147,7 @@ class AuthManager {
               print("nil Data received from the server")
               return
             }
-            print(String(decoding: data!, as: UTF8.self))
+            //print(String(decoding: data!, as: UTF8.self))
             let parser = AuthRespParser(data: data!)
             var authResp: AuthRequestResp?
             if parser.parse() {
@@ -191,7 +191,7 @@ class AuthManager {
               print("nil Data received from the server")
               return
             }
-            print(String(decoding: data!, as: UTF8.self))
+            //print(String(decoding: data!, as: UTF8.self))
             let parser = FinalAuthRespParser(data: data!)
             var authResp: AuthCompleteResp?
             if parser.parse() {
