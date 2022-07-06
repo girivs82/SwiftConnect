@@ -7,6 +7,16 @@
 
 import Foundation
 
+fileprivate extension URLRequest {
+    func debug() {
+        print("\(self.httpMethod!) \(self.url!)")
+        print("Headers:")
+        print(self.allHTTPHeaderFields!)
+        print("Body:")
+        print(String(data: self.httpBody ?? Data(), encoding: .utf8)!)
+    }
+}
+
 struct AuthRequestResp {
     var auth_id: String?
     var auth_title: String?
@@ -147,7 +157,14 @@ class AuthManager {
               print("nil Data received from the server")
               return
             }
-            //print(String(decoding: data!, as: UTF8.self))
+#if DEBUG
+            print("REQUEST")
+            print("-------")
+            request.debug()
+            print("RESPONSE")
+            print("--------")
+            print(String(data: data!, encoding: .utf8)!)
+#endif
             let parser = AuthRespParser(data: data!)
             var authResp: AuthRequestResp?
             if parser.parse() {
@@ -191,7 +208,14 @@ class AuthManager {
               print("nil Data received from the server")
               return
             }
-            //print(String(decoding: data!, as: UTF8.self))
+#if DEBUG
+            print("REQUEST")
+            print("-------")
+            request.debug()
+            print("RESPONSE")
+            print("--------")
+            print(String(data: data!, encoding: .utf8)!)
+#endif
             let parser = FinalAuthRespParser(data: data!)
             var authResp: AuthCompleteResp?
             if parser.parse() {

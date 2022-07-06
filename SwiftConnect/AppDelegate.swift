@@ -49,15 +49,16 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         statusItem.button?.image = (connected) ? icon_connected : icon
         statusItem.button?.image?.isTemplate = !connected
         //popover.contentViewController.
+        //generateNotification(sound: "NO", title: (connected) ? "VPN Connected" : "VPN Disconnected", body: (connected) ? "VPN is now connected." : "VPN is now disconnected.")
     }
     
     func networkDidDrop(dropped: Bool) {
-        statusItem.button?.image?.isTemplate = dropped
-        if dropped {
-            generateNotification(sound: "NO", title: "Network unreachable", body: "The network is unreachable. Please troubleshoot your network.")
-        } else {
-            generateNotification(sound: "NO", title: "Network available", body: "The network is reachable.")
-        }
+//        statusItem.button?.image?.isTemplate = dropped
+//        if dropped {
+//            generateNotification(sound: "NO", title: "Network unreachable", body: "The network is unreachable. Please troubleshoot your network.")
+//        } else {
+//            generateNotification(sound: "NO", title: "Network available", body: "The network is reachable.")
+//        }
     }
 
     func applicationWillFinishLaunching(_ notification: Notification) {
@@ -139,8 +140,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
                         content.title = title
                         content.body = body
                         if sound == "YES" {content.sound =  UNNotificationSound.default};
-                        // define when banner will appear - this is set to 5 seconds - note you cannot set this to zero
-                        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 5, repeats: false);
+                        // define when banner will appear - this is set to 1 seconds - note you cannot set this to zero
+                        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 1, repeats: false);
                         // Create the request
                         let uuidString = UUID().uuidString ;
                         let request = UNNotificationRequest(identifier: uuidString, content: content, trigger: trigger);

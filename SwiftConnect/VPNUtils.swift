@@ -121,22 +121,31 @@ class VPNController: ObservableObject {
         if authResp!.auth_error == nil {
             state = .webauth
         }
+        else {
+            print("preAuthCallback: Error in HTTP RESPONSE!!!", authResp as Any)
+        }
     }
     
     func authCookieCallback(cookie: HTTPCookie?) -> Void {
+        guard let uCookie = cookie else {
+            print("authCookieCallback: Cookie not received!!!", cookie as Any)
+            return
+        }
         state = .processing
         AppDelegate.shared.pinPopover = false
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
                         AppDelegate.shared.closePopover()
         }
-        self.authMgr!.finish_auth(authReqResp: self.authReqResp, cookie: cookie)
+        self.authMgr!.finish_auth(authReqResp: self.authReqResp, cookie: uCookie)
     }
     
     func postAuthCallback(authResp: AuthCompleteResp?) -> Void  {
-        let session_token = authResp?.session_token
+        guard let session_token = authResp?.session_token else {
+            print("postAuthCallback: Session cookie not found!!! HTTP RESPONSE: ", authResp as Any)
+            return
+        }
         let server_cert_hash = authResp?.server_cert_hash
-        startvpn(portal: self.url!, session_token: session_token, server_cert_hash: server_cert_hash) { succ in
-            
+        self.startvpn(portal: self.url!, session_token: session_token, server_cert_hash: server_cert_hash) { succ in
         }
     }
     
