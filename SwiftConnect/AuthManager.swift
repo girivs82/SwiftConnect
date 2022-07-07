@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import Network
 
 fileprivate extension URLRequest {
     func debug() {
@@ -71,10 +72,10 @@ class AuthManager {
         request.setValue("true", forHTTPHeaderField: "X-Support-HTTP-Auth")
         request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
         request.httpMethod = "POST"
-//        let base = XMLElement(name: "xml")
-//        let httpbody = XMLDocument(rootElement: base)
         let config_auth =  XMLElement(name: "config-auth", stringValue:"")
         let httpbody = XMLDocument(rootElement: config_auth)
+        httpbody.version = "1.0"
+        httpbody.characterEncoding = "UTF-8"
         config_auth.addAttribute(XMLNode.attribute(withName: "client", stringValue: "vpn") as! XMLNode)
         config_auth.addAttribute(XMLNode.attribute(withName: "type", stringValue: "init") as! XMLNode)
         config_auth.addAttribute(XMLNode.attribute(withName: "aggregate-auth-version", stringValue: "2") as! XMLNode)
@@ -93,8 +94,7 @@ class AuthManager {
         config_auth.addChild(group_select)
         config_auth.addChild(group_access)
         config_auth.addChild(capabilities)
-        let httpBody = "<?xml version=\'1.0\' encoding=\'UTF-8\'?>" + httpbody.xmlString
-        request.httpBody = httpBody.data(using: .utf8)
+        request.httpBody = httpbody.xmlString.data(using: .utf8)
         return request
     }
     
@@ -108,10 +108,10 @@ class AuthManager {
         request.setValue("true", forHTTPHeaderField: "X-Support-HTTP-Auth")
         request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
         request.httpMethod = "POST"
-//        let base = XMLElement(name: "xml")
-//        let httpbody = XMLDocument(rootElement: base)
         let config_auth =  XMLElement(name: "config-auth", stringValue:"")
         let httpbody = XMLDocument(rootElement: config_auth)
+        httpbody.version = "1.0"
+        httpbody.characterEncoding = "UTF-8"
         config_auth.addAttribute(XMLNode.attribute(withName: "client", stringValue: "vpn") as! XMLNode)
         config_auth.addAttribute(XMLNode.attribute(withName: "type", stringValue: "auth-reply") as! XMLNode)
         config_auth.addAttribute(XMLNode.attribute(withName: "aggregate-auth-version", stringValue: "2") as! XMLNode)
@@ -129,14 +129,12 @@ class AuthManager {
         config_auth.addChild(session_id)
         config_auth.addChild(authReqResp!.opaque)
         config_auth.addChild(auth)
-        let httpBody = "<?xml version=\'1.0\' encoding=\'UTF-8\'?>" + httpbody.xmlString
-        //print(httpBody)
-        request.httpBody = httpBody.data(using: .utf8)
+        request.httpBody = httpbody.xmlString.data(using: .utf8)
         return request
     }
     
     func sendPreAuthRequest(request: URLRequest) -> Void {
-        let task = URLSession.shared.dataTask(with: request) {
+        let task = URLSession(configuration: .ephemeral).dataTask(with: request) {
             data,response,error in
             
             if let error = error {
@@ -187,7 +185,7 @@ class AuthManager {
     }
     
     func sendFinalAuthRequest(request: URLRequest) -> Void {        
-        let task = URLSession.shared.dataTask(with: request) {
+        let task = URLSession(configuration: .ephemeral).dataTask(with: request) {
             data,response,error in
             
             if let error = error {
