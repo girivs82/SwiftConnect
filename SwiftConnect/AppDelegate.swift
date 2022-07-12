@@ -9,6 +9,7 @@ import Cocoa
 import SwiftUI
 import SwiftShell
 import UserNotifications
+import os.log
 
 
 class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
@@ -117,15 +118,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         return getuid() == 0;
     }
     
-    func relaunch() {
-        let bin = Bundle.main.executablePath!;
-        print("Relaunch: sudo \(bin)");
-        let _ = try! runAndPrint(bash: """
-            osascript -e "do shell script \\"sudo '\(bin)' &\\" with prompt \\"Start OpenConnect on privileged mode\\" with administrator privileges"&
-        """);
-        NSApp.terminate(nil)
-    }
-    
     func generateNotification (sound:String, title:String , body:String) {
         if #available(OSX 10.14, *) {
             UNUserNotificationCenter.current().delegate = NotificationCenterDelegate.shared // must have delegate, otherwise notification won't appear
@@ -151,7 +143,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
                             if error != nil
                                 {
                                     // Something went wrong
-                                    print("Something went wrong while adding notifications!")
+                                    Logger.viewCycle.error("Something went wrong while adding notifications!")
                                 }
                             })
                     }
@@ -160,7 +152,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
             
         } else {
             // Fallback on earlier versions
-            print("Notifications not implemented for macOS < 10.14")
+            Logger.viewCycle.error("Notifications not implemented for macOS < 10.14")
         }
     }
 }
@@ -224,24 +216,19 @@ class NotificationCenterDelegate : NSObject, UNUserNotificationCenterDelegate {
         // pull out the buried userInfo dictionary
         let userInfo = response.notification.request.content.userInfo
 
-        if let customData = userInfo["customData"] as? String {
-            print("Custom data received: \(customData)")
+        if let _ = userInfo["customData"] as? String {
 
             switch response.actionIdentifier {
             case UNNotificationDefaultActionIdentifier:
                 // the user swiped to unlock
-                print("Default identifier")
-
+                break
             case "show":
                 // the user tapped our "show more info…" button
-                print("Show more information…")
                 break
-
             default:
                 break
             }
         }
-        print("Reached handler")
 
         // you must call the completion handler when you're done
         completionHandler()

@@ -16,7 +16,6 @@
 		EFC2DB21276041FC00E051A1 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = EFC2DB20276041FC00E051A1 /* Assets.xcassets */; };
 		EFC2DB24276041FC00E051A1 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = EFC2DB23276041FC00E051A1 /* Preview Assets.xcassets */; };
 		EFC2DB2C2760527800E051A1 /* VPNUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = EFC2DB2B2760527800E051A1 /* VPNUtils.swift */; };
-		EFC2DB312760563400E051A1 /* SwiftShell in Frameworks */ = {isa = PBXBuildFile; productRef = EFC2DB302760563400E051A1 /* SwiftShell */; };
 		EFC2DB352760939300E051A1 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = EFC2DB342760939300E051A1 /* AppDelegate.swift */; };
 /* End PBXBuildFile section */
 
@@ -41,7 +40,6 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				EFC2DB312760563400E051A1 /* SwiftShell in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -108,7 +106,6 @@
 			);
 			name = SwiftConnect;
 			packageProductDependencies = (
-				EFC2DB302760563400E051A1 /* SwiftShell */,
 			);
 			productName = SwiftConnect;
 			productReference = EFC2DB19276041FB00E051A1 /* SwiftConnect.app */;
@@ -139,7 +136,6 @@
 			);
 			mainGroup = EFC2DB10276041FB00E051A1;
 			packageReferences = (
-				EFC2DB2F2760563400E051A1 /* XCRemoteSwiftPackageReference "SwiftShell" */,
 			);
 			productRefGroup = EFC2DB1A276041FB00E051A1 /* Products */;
 			projectDirPath = "";
@@ -376,25 +372,6 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
-
-/* Begin XCRemoteSwiftPackageReference section */
-		EFC2DB2F2760563400E051A1 /* XCRemoteSwiftPackageReference "SwiftShell" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/kareman/SwiftShell";
-			requirement = {
-				branch = master;
-				kind = branch;
-			};
-		};
-/* End XCRemoteSwiftPackageReference section */
-
-/* Begin XCSwiftPackageProductDependency section */
-		EFC2DB302760563400E051A1 /* SwiftShell */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = EFC2DB2F2760563400E051A1 /* XCRemoteSwiftPackageReference "SwiftShell" */;
-			productName = SwiftShell;
-		};
-/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = EFC2DB11276041FB00E051A1 /* Project object */;
 }

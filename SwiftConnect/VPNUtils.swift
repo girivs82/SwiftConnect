@@ -9,17 +9,7 @@ import Foundation
 import SwiftShell
 import SwiftUI
 import Security
-
-extension Dictionary where Key:Hashable {
-    public func filterToDictionary <C: Collection> (keys: C) -> [Key:Value]
-        where C.Iterator.Element == Key {
-
-        var result = [Key:Value](minimumCapacity: keys.count)
-        for key in keys { result[key] = self[key] }
-        return result
-    }
-}
-
+import os.log
 
 enum VPNState {
     case stopped, webauth, processing, launched
@@ -61,8 +51,6 @@ class VPNController: ObservableObject {
     private var sudo_password: String?
     private var authMgr: AuthManager?;
     private var authReqResp: AuthRequestResp?;
-    private var runCommand : AsyncCommand?;
-    var context = CustomContext(main)
     
     static let shared = VPNController()
     
@@ -82,53 +70,28 @@ class VPNController: ObservableObject {
         state = .processing
         
         // Prepare commands
-        print("[openconnect] start")
-        //Self.killOpenConnect()
-        // stdin to input cookie
-        let stdinStr = self.sudo_password! + "\n"
-        try! stdinStr.write(to: Self.stdinPath, atomically: true, encoding: .utf8)
-        let stdin = try! FileHandle(forReadingFrom: Self.stdinPath)
-        // stdout for logging
-        let stdoutPath = URL(fileURLWithPath: "\(NSTemporaryDirectory())/\(NSUUID().uuidString)");
-        try! "".write(to: stdoutPath, atomically: true, encoding: .utf8)
-        let stdout = try! FileHandle(forReadingFrom: stdoutPath)
-
-        currentLogURL = stdoutPath
-        print("[openconnect] stdout log: \(stdoutPath.path)")
-        print("[openconnect] stdin pending: \(VPNController.stdinPath.path)") //REMOVE THIS: sensitive information in stdin should not be logged
-        // Run
-        
-        // Prepare an environment as close to a new OS X user account as possible with the exception of PATH variable, where /opt/homebrew/bin is also added to discover openconnect
-        let cleanenvvars = ["TERM_PROGRAM", "SHELL", "TERM", "TMPDIR", "Apple_PubSub_Socket_Render", "TERM_PROGRAM_VERSION", "TERM_SESSION_ID", "USER", "SSH_AUTH_SOCK", "__CF_USER_TEXT_ENCODING", "XPC_FLAGS", "XPC_SERVICE_NAME", "SHLVL", "HOME", "LOGNAME", "LC_CTYPE", "_"]
-        context.env = context.env.filterToDictionary(keys: cleanenvvars)
-        context.env["PATH"] = "/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/opt/homebrew/bin"
-        context.stdin = FileHandleStream(stdin, encoding: .utf8)
-        let shellCommand = "sudo -S openconnect -C \(session_token!) --servercert=\(server_cert_hash!) \(portal!)/SAML"
-        self.runCommand = context.runAsync(bash: "\(shellCommand) &> \(stdoutPath.path)").onCompletion { _ in
-            try! "".write(to: Self.stdinPath, atomically: true, encoding: .utf8)
-            try? stdin.close()
-            try? stdout.close()
-            print("[openconnect] completed")
-        }
-        try! "".write(to: Self.stdinPath, atomically: true, encoding: .utf8)
-        print("[openconnect] launched")
-        print("[openconnect] cmd: \(shellCommand)")
+        Logger.vpnProcess.info("[openconnect] start")
+        launch(tool: URL(fileURLWithPath: "/usr/bin/sudo"),
+            arguments: ["-k", "-S", "openconnect", "--cookie-on-stdin", "--servercert=\(server_cert_hash!)", "\(portal!)/SAML"],
+            input: Data("\(self.sudo_password!)\n\(session_token!)\n".utf8)) { status, output in
+                Logger.vpnProcess.info("[openconnect] completed")
+            }
+        Logger.vpnProcess.info("[openconnect] launched")
         AppDelegate.shared.pinPopover = false
     }
     
     func preAuthCallback(authResp: AuthRequestResp?) -> Void {
         self.authReqResp = authResp
-        if authResp!.auth_error == nil {
-            state = .webauth
+        if let err = authResp!.auth_error {
+            Logger.vpnProcess.error("\(err)")
+            return
         }
-        else {
-            print("preAuthCallback: Error in HTTP RESPONSE!!!", authResp as Any)
-        }
+        state = .webauth
     }
     
     func authCookieCallback(cookie: HTTPCookie?) -> Void {
         guard let uCookie = cookie else {
-            print("authCookieCallback: Cookie not received!!!", cookie as Any)
+            Logger.vpnProcess.error("authCookieCallback: Cookie not received!!!")
             return
         }
         state = .processing
@@ -141,7 +104,7 @@ class VPNController: ObservableObject {
     
     func postAuthCallback(authResp: AuthCompleteResp?) -> Void  {
         guard let session_token = authResp?.session_token else {
-            print("postAuthCallback: Session cookie not found!!! HTTP RESPONSE: ", authResp as Any)
+            Logger.vpnProcess.error("postAuthCallback: Session cookie not found!!!")
             return
         }
         let server_cert_hash = authResp?.server_cert_hash
@@ -167,24 +130,11 @@ class VPNController: ObservableObject {
     
     func terminate() {
         state = .processing
-        let sudo_password = Credentials().sudo_password! + "\n"
-        try! sudo_password.write(to: Self.stdinPath, atomically: true, encoding: .utf8)
-        var context = CustomContext(main)
-        let stdin = try! FileHandle(forReadingFrom: Self.stdinPath)
-        context.stdin = FileHandleStream(stdin, encoding: .utf8)
-        context.runAsync("sudo", "-S", "pkill", "openconnect").onCompletion { _ in
-            try! "".write(to: Self.stdinPath, atomically: true, encoding: .utf8)
-            try? stdin.close()
-
-            if FileManager.default.fileExists(atPath: VPNController.stdinPath.path) {
-                // delete file
-                do {
-                    try FileManager.default.removeItem(atPath: VPNController.stdinPath.path)
-                } catch {
-                    print("Could not delete file, probably read-only filesystem")
-                }
+        launch(tool: URL(fileURLWithPath: "/usr/bin/sudo"),
+            arguments: ["-k", "-S", "pkill", "openconnect"],
+            input: Data("\(Credentials().sudo_password!)\n".utf8)) { status, output in
+                Logger.vpnProcess.info("[openconnect] completed")
             }
-        }
     }
     
     func openLogFile() {

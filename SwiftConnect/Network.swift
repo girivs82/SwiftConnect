@@ -8,6 +8,7 @@
 import Foundation
 import Network
 import SwiftUI
+import os.log
 
 class NetworkPathMonitor: ObservableObject {
     @Published var path: NWPath? = nil
@@ -21,7 +22,8 @@ class NetworkPathMonitor: ObservableObject {
             self?.path = path
             for intf in path.availableInterfaces {
                 let isOpenconnectRunning = isProcessRunning(executableName: "openconnect")
-                print(intf.name, intf.type, isOpenconnectRunning)
+                let intf_info = "\(intf.name), \(intf.type), \(isOpenconnectRunning)"
+                Logger.vpnProcess.info("\(intf_info)")
                 if intf.name.hasPrefix("utun") && isOpenconnectRunning {
                     self?.tun_intf = true
                     break

@@ -7,14 +7,38 @@
 
 import Foundation
 import Network
+import os.log
 
 fileprivate extension URLRequest {
     func debug() {
-        print("\(self.httpMethod!) \(self.url!)")
-        print("Headers:")
-        print(self.allHTTPHeaderFields!)
-        print("Body:")
-        print(String(data: self.httpBody ?? Data(), encoding: .utf8)!)
+        Logger.vpnProcess.debug("REQUEST")
+        Logger.vpnProcess.debug("-------")
+        Logger.vpnProcess.debug("\(self.httpMethod!) \(self.url!)")
+        Logger.vpnProcess.debug("Headers:")
+        let encoder = JSONEncoder()
+        if let jsonData = try? encoder.encode(self.allHTTPHeaderFields) {
+            if let jsonString = String(data: jsonData, encoding: .utf8) {
+                Logger.vpnProcess.debug("\(jsonString)")
+            }
+        }
+        Logger.vpnProcess.debug("Body:")
+        let httpbody = String(data: self.httpBody ?? Data(), encoding: .utf8)!
+        Logger.vpnProcess.debug("\(httpbody)")
+    }
+}
+
+fileprivate extension HTTPURLResponse {
+    func debug() {
+        Logger.vpnProcess.debug("RESPONSE")
+        Logger.vpnProcess.debug("--------")
+        Logger.vpnProcess.debug("\(self.url!)")
+        Logger.vpnProcess.debug("Headers:")
+        let encoder = JSONEncoder()
+        if let jsonData = try? encoder.encode(self.allHeaderFields as! Dictionary<String,String>) {
+            if let jsonString = String(data: jsonData, encoding: .utf8) {
+                Logger.vpnProcess.debug("\(jsonString)")
+            }
+        }
     }
 }
 
@@ -138,7 +162,7 @@ class AuthManager {
             data,response,error in
             
             if let error = error {
-              print("Post Request Error: \(error.localizedDescription)")
+                Logger.vpnProcess.error("Post Request Error: \(error.localizedDescription)")
               return
             }
             
@@ -146,23 +170,19 @@ class AuthManager {
             guard let httpResponse = response as? HTTPURLResponse,
                   (200...299).contains(httpResponse.statusCode)
             else {
-              print("Invalid Response received from the server")
+                Logger.vpnProcess.error("Invalid Response received from the server")
               return
             }
             
             // ensure there is data returned
             if data == nil {
-              print("nil Data received from the server")
+                Logger.vpnProcess.error("nil Data received from the server")
               return
             }
-#if DEBUG
-            print("REQUEST")
-            print("-------")
-            request.debug()
-            print("RESPONSE")
-            print("--------")
-            print(String(data: data!, encoding: .utf8)!)
-#endif
+//#if DEBUG
+//            request.debug()
+//            httpResponse.debug()
+//#endif
             let parser = AuthRespParser(data: data!)
             var authResp: AuthRequestResp?
             if parser.parse() {
@@ -170,9 +190,9 @@ class AuthManager {
                 self.credentials!.preauth = authResp
             } else {
                 if let error = parser.parserError {
-                    print(error)
+                    Logger.vpnProcess.error("\(error.localizedDescription)")
                 } else {
-                    print("Failed with unknown reason")
+                    Logger.vpnProcess.error("Failed with unknown reason")
                 }
             }
             //Use GCD to invoke the completion handler on the main thread
@@ -189,7 +209,7 @@ class AuthManager {
             data,response,error in
             
             if let error = error {
-              print("Post Request Error: \(error.localizedDescription)")
+                Logger.vpnProcess.error("Post Request Error: \(error.localizedDescription)")
               return
             }
             
@@ -197,23 +217,19 @@ class AuthManager {
             guard let httpResponse = response as? HTTPURLResponse,
                   (200...299).contains(httpResponse.statusCode)
             else {
-              print("Invalid Response received from the server")
+                Logger.vpnProcess.error("Invalid Response received from the server")
               return
             }
             
             // ensure there is data returned
             if data == nil {
-              print("nil Data received from the server")
+                Logger.vpnProcess.error("nil Data received from the server")
               return
             }
-#if DEBUG
-            print("REQUEST")
-            print("-------")
-            request.debug()
-            print("RESPONSE")
-            print("--------")
-            print(String(data: data!, encoding: .utf8)!)
-#endif
+//#if DEBUG
+//            request.debug()
+//            httpResponse.debug()
+//#endif
             let parser = FinalAuthRespParser(data: data!)
             var authResp: AuthCompleteResp?
             if parser.parse() {
@@ -221,9 +237,9 @@ class AuthManager {
                 self.credentials!.finalauth = authResp
             } else {
                 if let error = parser.parserError {
-                    print(error)
+                    Logger.vpnProcess.error("\(error.localizedDescription)")
                 } else {
-                    print("Failed with unknown reason")
+                    Logger.vpnProcess.error("Failed with unknown reason")
                 }
             }
             //Use GCD to invoke the completion handler on the main thread
@@ -310,7 +326,7 @@ extension AuthRespParser: XMLParserDelegate {
             if inside_opaque == true {
                 element?.stringValue = textBuffer
             }
-            //print("Ignoring \(elementName)")
+            //Logger.vpnProcess.debug("Ignoring \(elementName)")
             break
         }
     }
@@ -324,7 +340,7 @@ extension AuthRespParser: XMLParserDelegate {
     // Called when a CDATA block is found
     func parser(_ parser: XMLParser, foundCDATA CDATABlock: Data) {
         guard let string = String(data: CDATABlock, encoding: .utf8) else {
-            print("CDATA contains non-textual data, ignored")
+            Logger.vpnProcess.debug("CDATA contains non-textual data, ignored")
             return
         }
         textBuffer += string
@@ -332,8 +348,8 @@ extension AuthRespParser: XMLParserDelegate {
     
     // For debugging
     func parser(_ parser: XMLParser, parseErrorOccurred parseError: Error) {
-        print(parseError)
-        print("on:", parser.lineNumber, "at:", parser.columnNumber)
+        Logger.vpnProcess.error("\(parseError.localizedDescription)")
+        Logger.vpnProcess.debug("on: \(parser.lineNumber) at: \(parser.columnNumber)")
     }
 }
 
@@ -378,7 +394,7 @@ extension FinalAuthRespParser: XMLParserDelegate {
         case "server-cert-hash":
             authResp.server_cert_hash = textBuffer
         default:
-            //print("Ignoring \(elementName)")
+            //Logger.vpnProcess.debug("Ignoring \(elementName)")
             break
         }
     }
@@ -392,7 +408,7 @@ extension FinalAuthRespParser: XMLParserDelegate {
     // Called when a CDATA block is found
     func parser(_ parser: XMLParser, foundCDATA CDATABlock: Data) {
         guard let string = String(data: CDATABlock, encoding: .utf8) else {
-            print("CDATA contains non-textual data, ignored")
+            Logger.vpnProcess.debug("CDATA contains non-textual data, ignored")
             return
         }
         textBuffer += string
@@ -400,7 +416,7 @@ extension FinalAuthRespParser: XMLParserDelegate {
     
     // For debugging
     func parser(_ parser: XMLParser, parseErrorOccurred parseError: Error) {
-        print(parseError)
-        print("on:", parser.lineNumber, "at:", parser.columnNumber)
+        Logger.vpnProcess.error("\(parseError.localizedDescription)")
+        Logger.vpnProcess.debug("on: \(parser.lineNumber) at: \(parser.columnNumber)")
     }
 }
