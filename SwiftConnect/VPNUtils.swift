@@ -6,7 +6,6 @@
 //
 
 import Foundation
-import SwiftShell
 import SwiftUI
 import Security
 import os.log

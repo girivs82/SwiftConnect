@@ -49,7 +49,6 @@
 		EFC2DB10276041FB00E051A1 = {
 			isa = PBXGroup;
 			children = (
-				32567B18286D742B0099C11A /* Utils.swift */,
 				EFC2DB1B276041FB00E051A1 /* SwiftConnect */,
 				EFC2DB1A276041FB00E051A1 /* Products */,
 			);
@@ -66,6 +65,7 @@
 		EFC2DB1B276041FB00E051A1 /* SwiftConnect */ = {
 			isa = PBXGroup;
 			children = (
+				32567B18286D742B0099C11A /* Utils.swift */,
 				32979BD52868B78000C56C63 /* WebView.swift */,
 				EFC2DB1C276041FB00E051A1 /* SwiftConnectApp.swift */,
 				EFC2DB1E276041FB00E051A1 /* ContentView.swift */,

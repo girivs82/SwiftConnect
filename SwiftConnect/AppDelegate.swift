@@ -7,7 +7,6 @@
 
 import Cocoa
 import SwiftUI
-import SwiftShell
 import UserNotifications
 import os.log
 
