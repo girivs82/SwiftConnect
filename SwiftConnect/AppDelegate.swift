@@ -74,7 +74,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         if let window = NSApplication.shared.windows.first {
             window.close()
         }
-        // Just instantiate the shared object here for network change detection to run early
+        // Just instantiate the shared objects for processmanager and networkpathmonitor here for them to run early
+        ProcessManager.shared.initialize(proc_name: "openconnect", pid_file: URL(string: "file:///var/run/openconnect.pid"))
         _ = NetworkPathMonitor.shared
         // Initialize statusItem
         statusItem.button!.target = self

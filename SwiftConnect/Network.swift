@@ -21,7 +21,7 @@ class NetworkPathMonitor: ObservableObject {
         monitor.pathUpdateHandler = { [weak self] path in
             self?.path = path
             for intf in path.availableInterfaces {
-                let isOpenconnectRunning = isProcessRunning(executableName: "openconnect")
+                let isOpenconnectRunning = ProcessManager.shared.isProcRunning()
                 let intf_info = "\(intf.name), \(intf.type), \(isOpenconnectRunning)"
                 Logger.vpnProcess.info("\(intf_info)")
                 if intf.name.hasPrefix("utun") && isOpenconnectRunning {

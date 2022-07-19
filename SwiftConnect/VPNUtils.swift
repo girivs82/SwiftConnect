@@ -70,8 +70,8 @@ class VPNController: ObservableObject {
         
         // Prepare commands
         Logger.vpnProcess.info("[openconnect] start")
-        launch(tool: URL(fileURLWithPath: "/usr/bin/sudo"),
-            arguments: ["-k", "-S", "openconnect", "--cookie-on-stdin", "--servercert=\(server_cert_hash!)", "\(portal!)/SAML"],
+        ProcessManager.shared.launch(tool: URL(fileURLWithPath: "/usr/bin/sudo"),
+                                     arguments: ["-k", "-S", "openconnect", "-b", "--pid-file=/var/run/openconnect.pid", "--cookie-on-stdin", "--servercert=\(server_cert_hash!)", "\(portal!)/SAML"],
             input: Data("\(self.sudo_password!)\n\(session_token!)\n".utf8)) { status, output in
                 Logger.vpnProcess.info("[openconnect] completed")
             }
@@ -129,11 +129,7 @@ class VPNController: ObservableObject {
     
     func terminate() {
         state = .processing
-        launch(tool: URL(fileURLWithPath: "/usr/bin/sudo"),
-            arguments: ["-k", "-S", "pkill", "openconnect"],
-            input: Data("\(Credentials().sudo_password!)\n".utf8)) { status, output in
-                Logger.vpnProcess.info("[openconnect] completed")
-            }
+        ProcessManager.shared.terminateProcess()
     }
     
     func openLogFile() {
