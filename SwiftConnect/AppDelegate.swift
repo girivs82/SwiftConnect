@@ -83,7 +83,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
 
     func applicationWillTerminate(_ aNotification: Notification) {
         // Insert code here to tear down your application
-        VPNController.shared.terminate()
     }
     
     func popoverWillShow(_ notification: Notification) {
@@ -197,7 +196,12 @@ class ContextMenu: NSObject, NSMenuDelegate {
     }
     
     @objc func quit(_ sender: NSMenuItem) {
-        NSApp.terminate(nil)
+        DispatchQueue.main.async {
+            ProcessManager.shared.terminateProcess()
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+            NSApp.terminate(nil)
+        }
     }
 
     @objc func menuDidClose(_ menu: NSMenu) {
