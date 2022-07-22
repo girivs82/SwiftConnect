@@ -45,7 +45,6 @@ struct VPNLaunchedScreen: View {
         }.buttonStyle(PlainButtonStyle())
                 .position(x: 155, y: 190)
         }
-        .environmentObject(credentials)
     }
 }
 
@@ -54,7 +53,6 @@ struct VPNLaunchedScreen_Previews: PreviewProvider {
         VPNLaunchedScreen()
             .padding(windowInsets)
             .frame(width: windowSize.width, height: windowSize.height).background(VisualEffect())
-            .environmentObject(VPNController())
     }
 }
 
@@ -102,15 +100,14 @@ struct VPNLoginScreen: View {
             }) {
                 Text("Connect")
             }.keyboardShortcut(.defaultAction)
-             .disabled(!useSAMLv2)
-        }.environmentObject(vpn)
+        }
     }
 }
 
 struct VPNLoginScreen_Previews: PreviewProvider {
-    
+
     static var previews: some View {
-        VPNLoginScreen().environmentObject(VPNController()).environmentObject(Credentials())
+        VPNLoginScreen()
     }
 }
 
@@ -151,20 +148,21 @@ struct VPNWebAuthScreen: View {
 }
 
 struct VPNWebAuthScreen_Previews: PreviewProvider {
-    
+
     static var previews: some View {
-        VPNWebAuthScreen(mesgURL: URL(string: "")!).environmentObject(VPNController()).environmentObject(Credentials())
+        VPNWebAuthScreen(mesgURL: URL(string: "")!)
     }
 }
 
 
 struct ContentView: View {
-    @StateObject var vpn = VPNController.shared
-    @StateObject var credentials = Credentials()
+    @StateObject var credentials : Credentials = AppDelegate.shared.credentials!
+    @StateObject var vpn : VPNController = VPNController.shared
+    
     
     var body: some View {
         VStack {
-            switch (VPNController.shared.state) {
+            switch (vpn.state) {
             case .stopped: VPNLoginScreen().frame(width: windowSize.width, height: windowSize.height)
             case .webauth: VPNWebAuthScreen(mesgURL: URL(string: self.credentials.preauth!.login_url!)!).frame(width: 800, height: 450)
             case .processing: ProgressView().frame(width: windowSize.width, height: windowSize.height)
@@ -179,8 +177,8 @@ struct ContentView: View {
 }
 
 struct ContentView_Previews: PreviewProvider {
-    
+
     static var previews: some View {
-        ContentView().environmentObject(VPNController()).environmentObject(Credentials())
+        ContentView()
     }
 }

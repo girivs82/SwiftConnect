@@ -93,12 +93,12 @@ class ProcessManager {
         return isProcessRunning(executableName: proc_name!, proc_id: pid)
     }
     
-    public func terminateProcess() -> Void {
+    public func terminateProcess(credentials: Credentials?) -> Void {
         let pid = getPID()
         if isProcessRunning(executableName: proc_name!, proc_id: pid) {
             launch(tool: URL(fileURLWithPath: "/usr/bin/sudo"),
                    arguments: ["-k", "-S", "kill", String(pid)],
-                   input: Data("\(Credentials().sudo_password!)\n".utf8)) { status, output in
+                   input: Data("\(credentials!.sudo_password!)\n".utf8)) { status, output in
                 Logger.vpnProcess.info("[\(self.proc_name!)] completed")
                 }
         }

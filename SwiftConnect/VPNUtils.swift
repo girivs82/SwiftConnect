@@ -41,40 +41,53 @@ enum VPNProtocol: String, Equatable, CaseIterable {
 class VPNController: ObservableObject {
     @Published public var state: VPNState = .stopped
     @Published public var proto: VPNProtocol = .anyConnect
-    @EnvironmentObject var credentials: Credentials
+    var credentials: Credentials?
 
     private var currentLogURL: URL?;
     static var stdinPath = URL(fileURLWithPath: "\(NSTemporaryDirectory())/\(NSUUID().uuidString)");
     static var sudo_pass: String?;
-    private var url: String?;
-    private var sudo_password: String?
     private var authMgr: AuthManager?;
     private var authReqResp: AuthRequestResp?;
-    
     static let shared = VPNController()
     
+    func initialize (credentials: Credentials?) {
+        self.credentials = credentials
+    }
+
     func start(credentials: Credentials, save: Bool) {
-        
+        self.credentials = credentials
         if save {
             credentials.save()
         }
-        self.url = credentials.portal
-        self.sudo_password = credentials.sudo_password
-        VPNController.sudo_pass = self.sudo_password
-        self.authMgr = AuthManager(credentials: credentials, preAuthCallback: preAuthCallback, authCookieCallback: authCookieCallback, postAuthCallback: postAuthCallback)
-        self.authMgr!.pre_auth()
+        if credentials.samlv2 {
+            self.authMgr = AuthManager(credentials: credentials, preAuthCallback: preAuthCallback, authCookieCallback: authCookieCallback, postAuthCallback: postAuthCallback)
+            self.authMgr!.pre_auth()
+        }
+        else {
+            self.startvpn() { succ in
+            }
+        }
     }
     
-    public func startvpn(portal: String?, session_token: String?, server_cert_hash: String?, _ onLaunch: @escaping (_ succ: Bool) -> Void) {
+    public func startvpn(session_token: String? = "", server_cert_hash: String? = "", _ onLaunch: @escaping (_ succ: Bool) -> Void) {
         state = .processing
         
         // Prepare commands
         Logger.vpnProcess.info("[openconnect] start")
-        ProcessManager.shared.launch(tool: URL(fileURLWithPath: "/usr/bin/sudo"),
-                                     arguments: ["-k", "-S", "openconnect", "-b", "--pid-file=/var/run/openconnect.pid", "--cookie-on-stdin", "--servercert=\(server_cert_hash!)", "\(portal!)/SAML"],
-            input: Data("\(self.sudo_password!)\n\(session_token!)\n".utf8)) { status, output in
-                Logger.vpnProcess.info("[openconnect] completed")
-            }
+        if credentials!.samlv2 {
+            ProcessManager.shared.launch(tool: URL(fileURLWithPath: "/usr/bin/sudo"),
+                                         arguments: ["-k", "-S", "openconnect", "-b", "--protocol=\(proto)", "--pid-file=/var/run/openconnect.pid", "--cookie-on-stdin", "--servercert=\(server_cert_hash!)", "\(credentials!.portal!)/SAML"],
+                input: Data("\(credentials!.sudo_password!)\n\(session_token!)\n".utf8)) { status, output in
+                    Logger.vpnProcess.info("[openconnect] completed")
+                }
+        }
+        else {
+            ProcessManager.shared.launch(tool: URL(fileURLWithPath: "/usr/bin/sudo"),
+                                         arguments: ["-k", "-S", "openconnect", "-b", "--protocol=\(proto)", "--pid-file=/var/run/openconnect.pid", "-u", "\(credentials!.username!)", "--passwd-on-stdin", "\(credentials!.portal!)"],
+                                         input: Data("\(credentials!.sudo_password!)\n\(credentials!.password!)\n".utf8)) { status, output in
+                    Logger.vpnProcess.info("[openconnect] completed")
+                }
+        }
         Logger.vpnProcess.info("[openconnect] launched")
         AppDelegate.shared.pinPopover = false
     }
@@ -107,7 +120,7 @@ class VPNController: ObservableObject {
             return
         }
         let server_cert_hash = authResp?.server_cert_hash
-        self.startvpn(portal: self.url!, session_token: session_token, server_cert_hash: server_cert_hash) { succ in
+        self.startvpn(session_token: session_token, server_cert_hash: server_cert_hash) { succ in
         }
     }
     
@@ -129,7 +142,7 @@ class VPNController: ObservableObject {
     
     func terminate() {
         state = .processing
-        ProcessManager.shared.terminateProcess()
+        ProcessManager.shared.terminateProcess(credentials: self.credentials)
     }
     
     func openLogFile() {
@@ -139,116 +152,3 @@ class VPNController: ObservableObject {
     }
 }
 
-
-
-class Credentials: ObservableObject {
-    @Published public var portal: String?
-    @Published public var username: String?
-    @Published public var password: String?
-    @Published public var sudo_password: String?
-    public var preauth: AuthRequestResp? = nil
-    public var finalauth: AuthCompleteResp? = nil
-    public var samlv2: Bool = false
-    @Published var samlv2Token: HTTPCookie?
-    public var preAuthCallback: ((AuthRequestResp?) -> ())? = nil
-    public var authCookieCallback: ((HTTPCookie?) -> ())? = nil
-    public var postAuthCallback: ((AuthCompleteResp?) -> ())? = nil
-    
-    init() {
-        if let data = KeychainService.shared.load(server: "swiftconnect") {
-            username = data.username
-            password = data.password
-            portal = data.portal
-        } else {
-            portal = ""
-            username = "dummy"
-            password = ""
-        }
-        if let data1 = KeychainService.shared.load(server: "swiftconnect_sudo") {
-            sudo_password = data1.password
-        } else {
-            sudo_password = ""
-        }
-    }
-    
-    func save() {
-        let _ = KeychainService.shared.insertOrUpdate(credentials: CredentialsData(server: "swiftconnect", portal: portal, username: username, password: password))
-        let _ = KeychainService.shared.insertOrUpdate(credentials: CredentialsData(server: "swiftconnect_sudo", portal: "dummy", username: "dummy", password: sudo_password))
-    }
-}
-
-struct CredentialsData {
-    let server: String?
-    let portal: String?
-    let username: String?
-    let password: String?
-}
-
-class KeychainService: NSObject {
-    public static let shared = KeychainService();
-    
-    func insertOrUpdate(credentials: CredentialsData) -> Bool {
-        let server = credentials.server
-        let username = credentials.username
-        let password = credentials.password?.data(using: String.Encoding.utf8)
-        let portal = credentials.portal
-        let status = _insertOrUpdate(server: server, account: username, data: password, description: portal)
-        return status
-    }
-    
-    private func _insertOrUpdate(server: String?, account: String?, data: Data?, description: String?) -> Bool {
-        let query: [String: Any] = [
-            kSecClass as String: kSecClassInternetPassword,
-            kSecAttrServer as String: server as Any,
-        ]
-        let attributes: [String: Any] = [
-            kSecAttrAccount as String: account as Any,
-            kSecValueData as String: data as Any,
-            kSecAttrDescription as String: description as Any,
-        ]
-        let status = SecItemUpdate(query as CFDictionary, attributes as CFDictionary)
-        if status == errSecItemNotFound {
-            let query: [String: Any] = [
-                kSecClass as String: kSecClassInternetPassword,
-                kSecAttrAccount as String: account as Any,
-                kSecAttrServer as String: server as Any,
-                kSecValueData as String: data as Any,
-                kSecAttrDescription as String: description as Any,
-            ]
-            let status = SecItemAdd(query as CFDictionary, nil)
-            return status == errSecSuccess
-        } else {
-            return status == errSecSuccess
-        }
-    }
-    
-    func load(server: String) -> CredentialsData? {
-        return _load(server: server)
-    }
-    
-    private func _load(server: String) -> CredentialsData? {
-        let query: [String: Any] = [
-            kSecClass as String: kSecClassInternetPassword,
-            kSecAttrServer as String: server,
-            kSecMatchLimit as String: kSecMatchLimitOne,
-            kSecReturnAttributes as String: true,
-            kSecReturnData as String: true,
-        ]
-        
-        var item: CFTypeRef?
-        let status = SecItemCopyMatching(query as CFDictionary, &item)
-        guard status != errSecItemNotFound else { return nil }
-        guard status == errSecSuccess else { return nil }
-        
-        guard let existingItem = item as? [String : Any],
-            let passwordData = existingItem[kSecValueData as String] as? Data,
-            let password = String(data: passwordData, encoding: String.Encoding.utf8),
-            let username = existingItem[kSecAttrAccount as String] as? String,
-            let portal = existingItem[kSecAttrDescription as String] as? String
-        else {
-            return nil
-        }
-        
-        return CredentialsData(server: server, portal: portal, username: username, password: password)
-    }
-}

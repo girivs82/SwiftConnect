@@ -13,6 +13,7 @@ import os.log
 
 class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
     static var shared: AppDelegate!;
+    var credentials: Credentials?
     
     var pinPopover = false
     
@@ -74,7 +75,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         if let window = NSApplication.shared.windows.first {
             window.close()
         }
-        // Just instantiate the shared objects for processmanager and networkpathmonitor here for them to run early
+        // Just initialize the shared objects for vpncontroller, processmanager and networkpathmonitor here for them to run early
+        self.credentials = Credentials.shared
+        VPNController.shared.initialize(credentials: self.credentials)
         ProcessManager.shared.initialize(proc_name: "openconnect", pid_file: URL(string: "file:///var/run/openconnect.pid"))
         _ = NetworkPathMonitor.shared
         // Initialize statusItem
@@ -197,7 +200,7 @@ class ContextMenu: NSObject, NSMenuDelegate {
     
     @objc func quit(_ sender: NSMenuItem) {
         DispatchQueue.main.async {
-            ProcessManager.shared.terminateProcess()
+            ProcessManager.shared.terminateProcess(credentials: Credentials.shared)
         }
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
             NSApp.terminate(nil)
