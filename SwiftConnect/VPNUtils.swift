@@ -76,14 +76,14 @@ class VPNController: ObservableObject {
         Logger.vpnProcess.info("[openconnect] start")
         if credentials!.samlv2 {
             ProcessManager.shared.launch(tool: URL(fileURLWithPath: "/usr/bin/sudo"),
-                                         arguments: ["-k", "-S", "openconnect", "-b", "--protocol=\(proto)", "--pid-file=/var/run/openconnect.pid", "--cookie-on-stdin", "--servercert=\(server_cert_hash!)", "\(credentials!.portal!)/SAML"],
+                                         arguments: ["-k", "-S", credentials!.bin_path!, "-b", "--protocol=\(proto)", "--pid-file=/var/run/openconnect.pid", "--cookie-on-stdin", "--servercert=\(server_cert_hash!)", "\(credentials!.portal!)/SAML"],
                 input: Data("\(credentials!.sudo_password!)\n\(session_token!)\n".utf8)) { status, output in
                     Logger.vpnProcess.info("[openconnect] completed")
                 }
         }
         else {
             ProcessManager.shared.launch(tool: URL(fileURLWithPath: "/usr/bin/sudo"),
-                                         arguments: ["-k", "-S", "openconnect", "-b", "--protocol=\(proto)", "--pid-file=/var/run/openconnect.pid", "-u", "\(credentials!.username!)", "--passwd-on-stdin", "\(credentials!.portal!)"],
+                                         arguments: ["-k", "-S", credentials!.bin_path!, "-b", "--protocol=\(proto)", "--pid-file=/var/run/openconnect.pid", "-u", "\(credentials!.username!)", "--passwd-on-stdin", "\(credentials!.portal!)"],
                                          input: Data("\(credentials!.sudo_password!)\n\(credentials!.password!)\n".utf8)) { status, output in
                     Logger.vpnProcess.info("[openconnect] completed")
                 }

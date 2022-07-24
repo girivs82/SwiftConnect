@@ -14,6 +14,7 @@ class Credentials: ObservableObject {
     @Published public var username: String?
     @Published public var password: String?
     @Published public var sudo_password: String?
+    @Published public var bin_path: String?
     public var preauth: AuthRequestResp? = nil
     public var finalauth: AuthCompleteResp? = nil
     public var samlv2: Bool = false
@@ -26,25 +27,34 @@ class Credentials: ObservableObject {
     
     init() {
         //context.touchIDAuthenticationAllowableReuseDuration = LATouchIDAuthenticationMaximumAllowableReuseDuration
-        if let data = KeychainService.shared.load(context: context, server: "swiftconnect") {
+        if let data = KeychainService.shared.load(context: context, server: "swiftconnect", reason: "read your stored vpn authentication details from the keychain") {
             username = data.username
             password = data.password
             portal = data.portal
+            bin_path = data.comment
         } else {
             portal = ""
-            username = "dummy"
+            username = "<none>"
             password = ""
+            bin_path = ""
         }
-        if let data1 = KeychainService.shared.load(context: context, server: "swiftconnect_sudo") {
-            sudo_password = data1.password
+        // Also load the sudo password from the swiftconnect_sudo keychain entry
+        load_sudo_password()
+    }
+    
+    func load_sudo_password() {
+        if let data = KeychainService.shared.load(context: context, server: "swiftconnect_sudo", reason: "read your sudo password from the keychain") {
+            username = "<none>"
+            sudo_password = data.password
         } else {
+            username = "<none>"
             sudo_password = ""
         }
     }
     
     func save() {
-        let _ = KeychainService.shared.insertOrUpdate(credentials: CredentialsData(server: "swiftconnect", portal: portal, username: username, password: password))
-        let _ = KeychainService.shared.insertOrUpdate(credentials: CredentialsData(server: "swiftconnect_sudo", portal: "dummy", username: "dummy", password: sudo_password))
+        let _ = KeychainService.shared.insertOrUpdate(credentials: CredentialsData(server: "swiftconnect", portal: portal, username: username, password: password, comment: bin_path))
+        let _ = KeychainService.shared.insertOrUpdate(credentials: CredentialsData(server: "swiftconnect_sudo", portal: "<none>", username: "<none>", password: sudo_password, comment: "<none>"))
     }
 }
 
@@ -53,6 +63,13 @@ struct CredentialsData {
     let portal: String?
     let username: String?
     let password: String?
+    let comment: String?
+}
+
+enum KeychainError: Error {
+    case noPassword
+    case unexpectedPasswordData
+    case unhandledError(status: OSStatus)
 }
 
 class KeychainService: NSObject {
@@ -63,11 +80,12 @@ class KeychainService: NSObject {
         let username = credentials.username
         let password = credentials.password?.data(using: String.Encoding.utf8)
         let portal = credentials.portal
-        let status = _insertOrUpdate(server: server, account: username, data: password, description: portal)
+        let comment = credentials.comment
+        let status = try! _insertOrUpdate(server: server, account: username, data: password, description: portal, comment: comment)
         return status
     }
     
-    private func _insertOrUpdate(server: String?, account: String?, data: Data?, description: String?) -> Bool {
+    private func _insertOrUpdate(server: String?, account: String?, data: Data?, description: String?, comment: String?) throws -> Bool {
         let query: [String: Any] = [
             kSecClass as String: kSecClassInternetPassword,
             kSecAttrServer as String: server as Any,
@@ -76,6 +94,7 @@ class KeychainService: NSObject {
             kSecAttrAccount as String: account as Any,
             kSecValueData as String: data as Any,
             kSecAttrDescription as String: description as Any,
+            kSecAttrComment as String: comment as Any,
         ]
         let status = SecItemUpdate(query as CFDictionary, attributes as CFDictionary)
         if status == errSecItemNotFound {
@@ -85,20 +104,23 @@ class KeychainService: NSObject {
                 kSecAttrServer as String: server as Any,
                 kSecValueData as String: data as Any,
                 kSecAttrDescription as String: description as Any,
+                kSecAttrComment as String: comment as Any,
             ]
             let status = SecItemAdd(query as CFDictionary, nil)
+            guard status == errSecSuccess else { throw KeychainError.unhandledError(status: status) }
             return status == errSecSuccess
         } else {
+            guard status == errSecSuccess else { throw KeychainError.unhandledError(status: status) }
             return status == errSecSuccess
         }
     }
     
-    func load(context: LAContext, server: String) -> CredentialsData? {
+    func load(context: LAContext, server: String, reason: String) -> CredentialsData? {
         var retVal : CredentialsData?
         let group = DispatchGroup()
         group.enter()
         DispatchQueue.global(qos: .userInitiated).async {
-            context.evaluatePolicy(.deviceOwnerAuthentication, localizedReason: "read your stored vpn authentication details and device sudo password from the keychain", reply: { (success, error) in
+            context.evaluatePolicy(.deviceOwnerAuthentication, localizedReason: reason, reply: { (success, error) in
                 if (error != nil) {
                     Logger.vpnProcess.error("\(error!.localizedDescription)")
                     group.leave()
@@ -132,11 +154,12 @@ class KeychainService: NSObject {
             let passwordData = existingItem[kSecValueData as String] as? Data,
             let password = String(data: passwordData, encoding: String.Encoding.utf8),
             let username = existingItem[kSecAttrAccount as String] as? String,
-            let portal = existingItem[kSecAttrDescription as String] as? String
+            let portal = existingItem[kSecAttrDescription as String] as? String,
+            let comment = existingItem[kSecAttrComment as String] as? String
         else {
             return nil
         }
         
-        return CredentialsData(server: server, portal: portal, username: username, password: password)
+        return CredentialsData(server: server, portal: portal, username: username, password: password, comment: comment)
     }
 }

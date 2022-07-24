@@ -60,8 +60,11 @@ struct VPNLoginScreen: View {
     @EnvironmentObject var vpn: VPNController
     @EnvironmentObject var credentials: Credentials
     @EnvironmentObject var network: NetworkPathMonitor
+    @Environment(\.colorScheme) var colorScheme
     @State private var saveToKeychain = true
     @State private var useSAMLv2 = true
+    @State var openconnectPath = "Openconnect Binary Path"
+    @State var showFileChooser = false
     
     var body: some View {
         VStack {
@@ -83,9 +86,11 @@ struct VPNLoginScreen: View {
                     SecureField("Password", text: $credentials.password ?? "")
                 }
             }
-            Spacer().frame(height: 25)
-            Text("Superuser Password")
-            SecureField("Sudo Password", text: $credentials.sudo_password ?? "")
+            Group {
+                Spacer().frame(height: 25)
+                Text("Superuser Password")
+                SecureField("Sudo Password", text: $credentials.sudo_password ?? "")
+            }
             Spacer().frame(height: 25)
             Toggle(isOn: $saveToKeychain) {
                 Text("Save to Keychain")
@@ -94,8 +99,29 @@ struct VPNLoginScreen: View {
                 Text("SAMLv2")
             }.toggleStyle(CheckboxToggleStyle())
             Spacer().frame(height: 25)
+            VStack {
+                Text("Openconnect Bin Path")
+                TextField("Openconnect path", text: $credentials.bin_path ?? "")
+                    .disabled(true)
+                    .foregroundColor(colorScheme == .light ? .black : .white)
+                Button("Select")
+                {
+                    let panel = NSOpenPanel()
+                    panel.allowsMultipleSelection = false
+                    panel.canChooseDirectories = false
+                    if panel.runModal() == .OK {
+                        let alert = NSAlert()
+                        alert.messageText = "Trusted Binary Notice"
+                        alert.informativeText = "Please ensure that the binary selected is trusted. It will be run with elevated privileges."
+                        alert.runModal()
+                        credentials.bin_path = panel.url?.path ?? ""
+                    }
+                }
+            }.frame(maxWidth: .infinity, maxHeight: .infinity)
+            Spacer().frame(height: 25)
             Button(action: {
                 self.credentials.samlv2 = self.useSAMLv2
+                self.credentials.load_sudo_password()
                 vpn.start(credentials: credentials, save: saveToKeychain)
             }) {
                 Text("Connect")
