@@ -121,7 +121,6 @@ struct VPNLoginScreen: View {
             Spacer().frame(height: 25)
             Button(action: {
                 self.credentials.samlv2 = self.useSAMLv2
-                self.credentials.load_sudo_password()
                 vpn.start(credentials: credentials, save: saveToKeychain)
             }) {
                 Text("Connect")

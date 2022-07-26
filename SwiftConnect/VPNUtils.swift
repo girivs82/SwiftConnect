@@ -59,6 +59,7 @@ class VPNController: ObservableObject {
         if save {
             credentials.save()
         }
+        credentials.load_sudo_password()
         if credentials.samlv2 {
             self.authMgr = AuthManager(credentials: credentials, preAuthCallback: preAuthCallback, authCookieCallback: authCookieCallback, postAuthCallback: postAuthCallback)
             self.authMgr!.pre_auth()

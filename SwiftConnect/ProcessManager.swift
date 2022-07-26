@@ -135,7 +135,7 @@ class ProcessManager {
         // Prepare an environment as close to a new OS X user account as possible with the exception of PATH variable, where /opt/homebrew/bin is also added to discover openconnect
         let cleanenvvars = ["TERM_PROGRAM", "SHELL", "TERM", "TMPDIR", "Apple_PubSub_Socket_Render", "TERM_PROGRAM_VERSION", "TERM_SESSION_ID", "USER", "SSH_AUTH_SOCK", "__CF_USER_TEXT_ENCODING", "XPC_FLAGS", "XPC_SERVICE_NAME", "SHLVL", "HOME", "LOGNAME", "LC_CTYPE", "_"]
         proc.environment = cleanenvvars.reduce(into: [String: String]()) { $0[$1] = "" }
-        proc.environment!["PATH"] = "/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/opt/homebrew/bin"
+        proc.environment!["PATH"] = "/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
         group.enter()
         proc.terminationHandler = { _ in
             // This bounce to the main queue is important; read the comment near the
