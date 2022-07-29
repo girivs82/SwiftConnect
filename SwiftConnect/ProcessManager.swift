@@ -132,7 +132,7 @@ class ProcessManager {
         proc.arguments = arguments
         proc.standardInput = inputPipe
         proc.standardOutput = outputPipe
-        // Prepare an environment as close to a new OS X user account as possible with the exception of PATH variable, where /opt/homebrew/bin is also added to discover openconnect
+        // Prepare an environment as close to a new macOS user account as possible
         let cleanenvvars = ["TERM_PROGRAM", "SHELL", "TERM", "TMPDIR", "Apple_PubSub_Socket_Render", "TERM_PROGRAM_VERSION", "TERM_SESSION_ID", "USER", "SSH_AUTH_SOCK", "__CF_USER_TEXT_ENCODING", "XPC_FLAGS", "XPC_SERVICE_NAME", "SHLVL", "HOME", "LOGNAME", "LC_CTYPE", "_"]
         proc.environment = cleanenvvars.reduce(into: [String: String]()) { $0[$1] = "" }
         proc.environment!["PATH"] = "/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"

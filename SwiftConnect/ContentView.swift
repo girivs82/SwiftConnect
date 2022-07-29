@@ -150,19 +150,16 @@ struct VPNWebAuthScreen: View {
     var body: some View {
         VStack {
             HStack(alignment: .center) {
-                Spacer()
+                Button(action: {
+                    vpn.state = .stopped
+                    AppDelegate.shared.pinPopover = false
+                }) {
+                    Text("Cancel Authentication")
+                }
                 Spacer()
                 //The title of the webpage
                 Text(self.model.didFinishLoading ? self.model.pageTitle : "")
                 Spacer()
-                //The "Open with Safari" button on the top right side of the preview
-                Button(action: {
-                    if let url = self.model.link {
-                        NSWorkspace.shared.open(url)
-                    }
-                }) {
-                    Text("Open with Safari")
-                }.disabled(true)
             }
             //The webpage itself
             AuthWebView(viewModel: model)

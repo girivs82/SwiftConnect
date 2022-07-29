@@ -100,6 +100,8 @@ class VPNController: ObservableObject {
             return
         }
         state = .webauth
+        // Keep the popup window open until web auth is complete or cancelled
+        AppDelegate.shared.pinPopover = true
     }
     
     func authCookieCallback(cookie: HTTPCookie?) -> Void {
@@ -110,7 +112,7 @@ class VPNController: ObservableObject {
         state = .processing
         AppDelegate.shared.pinPopover = false
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-                        AppDelegate.shared.closePopover()
+            AppDelegate.shared.closePopover()
         }
         self.authMgr!.finish_auth(authReqResp: self.authReqResp, cookie: uCookie)
     }
