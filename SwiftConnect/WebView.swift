@@ -82,9 +82,47 @@ class Coordinator: NSObject, WKNavigationDelegate {
         if web.url?.absoluteString == self.credentials.preauth?.login_final_url {
             self.getCookie(web: web, name: self.credentials.preauth?.token_cookie_name)
         }
+        else {
+            let data = AutoFillData(username: self.credentials.username, password: self.credentials.password)
+            web.evaluateJavaScript(data.createJSString(), completionHandler: nil)
+        }
     }
 
     func webView(_ web: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) { }
 
 }
 
+struct AutoFillData {
+
+    var username: String?
+    var password: String?
+
+    enum KeyNames: String, CaseIterable {
+        case username = "loginfmt",
+             password = "passwd"
+    }
+
+    func getData(keyName: KeyNames) -> String? {
+        switch keyName {
+        case .username: return username
+        case .password: return password
+        }
+    }
+
+    func createJSString() -> String {
+        var str = ""
+        KeyNames.allCases.forEach {
+            let value = getData(keyName: $0)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            if !value.isEmpty {
+                str.append("""
+                var e = document.getElementsByName('\($0.rawValue)')[0];
+                if (e != null) {
+                    e.focus()
+                    e.value = '\(value)';
+                }
+                """)
+            }
+        }
+        return str
+    }
+}

@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-let windowSize = CGSize(width: 250, height: 350)
+let windowSize = CGSize(width: 250, height: 480)
 let windowInsets = EdgeInsets(top: 30, leading: 30, bottom: 30, trailing: 30)
 
 struct VisualEffect: NSViewRepresentable {
@@ -77,14 +77,12 @@ struct VPNLoginScreen: View {
                 Text("Portal")
                 TextField("Portal", text: $credentials.portal ?? "")
             }
-            if !useSAMLv2 {
-                Group {
-                    Spacer().frame(height: 25)
-                    Text("Username")
-                    TextField("Username", text: $credentials.username ?? "")
-                    Text("Password")
-                    SecureField("Password", text: $credentials.password ?? "")
-                }
+            Group {
+                Spacer().frame(height: 25)
+                Text("Username")
+                TextField("Username", text: $credentials.username ?? "")
+                Text("Password")
+                SecureField("Password", text: $credentials.password ?? "")
             }
             Group {
                 Spacer().frame(height: 25)

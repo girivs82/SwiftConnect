@@ -43,10 +43,8 @@ class Credentials: ObservableObject {
     
     func load_sudo_password() {
         if let data = KeychainService.shared.load(context: context, server: "swiftconnect_sudo", reason: "read your sudo password from the keychain") {
-            username = "<none>"
             sudo_password = data.password
         } else {
-            username = "<none>"
             sudo_password = ""
         }
     }
