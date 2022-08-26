@@ -84,7 +84,9 @@ class Coordinator: NSObject, WKNavigationDelegate {
         }
         else {
             let data = AutoFillData(username: self.credentials.username, password: self.credentials.password)
-            web.evaluateJavaScript(data.createJSString(), completionHandler: nil)
+            web.evaluateJavaScript(data.createJSString()) { (value, error) in
+                print(value as Any, error as Any)
+            }
         }
     }
 
@@ -115,11 +117,13 @@ struct AutoFillData {
             let value = getData(keyName: $0)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
             if !value.isEmpty {
                 str.append("""
-                var e = document.getElementsByName('\($0.rawValue)')[0];
-                if (e != null) {
-                    e.focus()
-                    e.value = '\(value)';
-                }
+                setTimeout(function(){
+                    var e = document.getElementsByName('\($0.rawValue)')[0];
+                    if (e != null) {
+                        e.focus()
+                        e.value = '\(value)';
+                    }
+                },10);
                 """)
             }
         }
