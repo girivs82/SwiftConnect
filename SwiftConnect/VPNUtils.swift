@@ -127,22 +127,6 @@ class VPNController: ObservableObject {
         }
     }
     
-    func watchLaunch(file: FileHandle, callback: @escaping () -> Void) {
-        let source = DispatchSource.makeFileSystemObjectSource(
-            fileDescriptor: file.fileDescriptor,
-            eventMask: .extend,
-            queue: DispatchQueue.main
-        )
-        source.setEventHandler {
-            guard source.data.contains(.extend) else { return }
-        }
-        source.setCancelHandler {
-            try? file.close()
-        }
-        file.seekToEndOfFile()
-        source.resume()
-    }
-    
     func terminate() {
         state = .processing
         ProcessManager.shared.terminateProcess(credentials: self.credentials)
