@@ -74,8 +74,11 @@ struct VPNLoginScreen: View {
                         Text($0.name)
                     }
                 }
-                Text("Portal")
-                TextField("Portal", text: $credentials.portal ?? "")
+                Picker(selection: $credentials.portal, label: EmptyView()) {
+                    ForEach(AppDelegate.shared.serverlist, id: \.self.id) {
+                        Text($0.serverName)
+                    }
+                }
             }
             Group {
                 Spacer().frame(height: 25)
@@ -105,6 +108,7 @@ struct VPNLoginScreen: View {
                 Button("Select")
                 {
                     let panel = NSOpenPanel()
+                    panel.resolvesAliases = false
                     panel.allowsMultipleSelection = false
                     panel.canChooseDirectories = false
                     if panel.runModal() == .OK {

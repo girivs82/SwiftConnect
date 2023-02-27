@@ -4,7 +4,6 @@
 //
 //  Created by Shankar Giri Venkita Giri on 30/06/22.
 //
-// Added GetBSDProcessList() from https://github.com/soh335/GetBSDProcessList/blob/master/GetBSDProcessList/GetBSDProcessList.swift and modified to fix compilation errors
 
 import SwiftUI
 import Foundation
@@ -35,4 +34,32 @@ extension Logger {
     /// Logs the view cycles like viewDidLoad.
     static let viewCycle = Logger(subsystem: subsystem, category: "viewcycle")
     static let vpnProcess = Logger(subsystem: subsystem, category: "vpnProcess")
+}
+
+func load_gateways_from_plist(plist_name: String) -> [Server] {
+    // Load the gateways from the provided plist name
+    var resourceFileDictionary: NSDictionary?
+    var serverlist = [Server]()
+        
+    //Load content of Info.plist into resourceFileDictionary dictionary
+    if let path = Bundle.main.path(forResource: plist_name, ofType: "plist") {
+        resourceFileDictionary = NSDictionary(contentsOfFile: path)
+    }
+    
+    if let resourceFileDictionaryContent = resourceFileDictionary {
+        
+        // Get something from our Info.plist like MinimumOSVersion
+        let serverarray = ((resourceFileDictionaryContent.object(forKey: "AnyConnectProfile") as! NSDictionary).object(forKey: "ServerList") as! NSDictionary).object(forKey: "HostEntry")! as! NSArray
+        //print(serverlist)
+        for item in serverarray {
+            let obj = item as! NSDictionary
+            let key = obj.object(forKey: "HostName") as! String
+            let val = "https://" + (obj.object(forKey: "HostAddress") as! String)
+            let server = Server(serverName: key, id: val)
+            serverlist.append(server)
+            //Or we can print out entire Info.plist dictionary to preview its content
+            //print(resourceFileDictionaryContent)
+        }
+    }
+    return serverlist
 }

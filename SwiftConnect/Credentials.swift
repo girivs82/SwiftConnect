@@ -10,7 +10,7 @@ import LocalAuthentication
 import os.log
 
 class Credentials: ObservableObject {
-    @Published public var portal: String?
+    @Published public var portal: String
     @Published public var username: String?
     @Published public var password: String?
     @Published public var sudo_password: String?
@@ -26,16 +26,36 @@ class Credentials: ObservableObject {
     static let shared = Credentials()
     
     init() {
+        // Load the default gateway and openconnect binpath Info.plist
+        var resourceFileDictionary: NSDictionary?
+        var default_gateway: String! = ""
+        var openconnect_path: String! = ""
+            
+            //Load content of Info.plist into resourceFileDictionary dictionary
+            if let path = Bundle.main.path(forResource: "Info", ofType: "plist") {
+                resourceFileDictionary = NSDictionary(contentsOfFile: path)
+            }
+            
+            if let resourceFileDictionaryContent = resourceFileDictionary {
+                // Get something from our Info.plist like MinimumOSVersion
+                default_gateway = resourceFileDictionaryContent.object(forKey: "DefaultGateway") as? String
+                openconnect_path = resourceFileDictionaryContent.object(forKey: "OpenconnectPath") as? String
+            }
+        
         if let data = KeychainService.shared.load(context: context, server: "swiftconnect", reason: "read your stored vpn authentication details from the keychain") {
             username = data.username
             password = data.password
-            portal = data.portal
+            portal = data.portal!
             bin_path = data.comment
         } else {
-            portal = ""
+            portal = default_gateway!
             username = "<none>"
             password = ""
-            bin_path = ""
+            bin_path = openconnect_path!
+        }
+        // If keychain is defined, but bin_path is empty, fill it from plist
+        if bin_path == "" {
+            bin_path = openconnect_path!
         }
         // Also load the sudo password from the swiftconnect_sudo keychain entry
         load_sudo_password()

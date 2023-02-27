@@ -87,7 +87,7 @@ class AuthManager {
     }
     
     private func createInitialAuthRequest() -> URLRequest {
-        var request = URLRequest(url: URL(string: self.credentials!.portal!)!)
+        var request = URLRequest(url: URL(string: self.credentials!.portal)!)
         request.setValue("AnyConnect Linux_64 4.7.00136", forHTTPHeaderField: "User-Agent")
         request.setValue("*/*", forHTTPHeaderField: "Accept")
         request.setValue("identity", forHTTPHeaderField: "Accept-Encoding")
@@ -123,7 +123,7 @@ class AuthManager {
     }
     
     private func createFinalAuthRequest(authReqResp: AuthRequestResp?) -> URLRequest {
-        var request = URLRequest(url: URL(string: self.credentials!.portal!)!)
+        var request = URLRequest(url: URL(string: self.credentials!.portal)!)
         request.setValue("AnyConnect Linux_64 4.7.00136", forHTTPHeaderField: "User-Agent")
         request.setValue("*/*", forHTTPHeaderField: "Accept")
         request.setValue("identity", forHTTPHeaderField: "Accept-Encoding")

@@ -14,6 +14,7 @@ import os.log
 class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
     static var shared: AppDelegate!;
     var credentials: Credentials?
+    var serverlist = [Server]()
     
     var pinPopover = false
     
@@ -75,6 +76,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         if let window = NSApplication.shared.windows.first {
             window.close()
         }
+        self.serverlist = load_gateways_from_plist(plist_name: "ngvpn")
         // Just initialize the shared objects for vpncontroller, processmanager and networkpathmonitor here for them to run early
         self.credentials = Credentials.shared
         VPNController.shared.initialize(credentials: self.credentials)

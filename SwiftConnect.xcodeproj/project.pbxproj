@@ -13,6 +13,8 @@
 		327D51EA288521D70009AD1C /* ProcessManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 327D51E9288521D70009AD1C /* ProcessManager.swift */; };
 		32979BD62868B78000C56C63 /* WebView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32979BD52868B78000C56C63 /* WebView.swift */; };
 		329A7595288A895000F1C076 /* Credentials.swift in Sources */ = {isa = PBXBuildFile; fileRef = 329A7594288A895000F1C076 /* Credentials.swift */; };
+		32B6832B29AC72C500B02829 /* ngvpn.plist in Resources */ = {isa = PBXBuildFile; fileRef = 32B6832A29AC72C500B02829 /* ngvpn.plist */; };
+		32B6832D29AD0BD000B02829 /* Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 32B6832C29AD0BD000B02829 /* Info.plist */; };
 		EFC2DB1D276041FB00E051A1 /* SwiftConnectApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = EFC2DB1C276041FB00E051A1 /* SwiftConnectApp.swift */; };
 		EFC2DB1F276041FB00E051A1 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EFC2DB1E276041FB00E051A1 /* ContentView.swift */; };
 		EFC2DB21276041FC00E051A1 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = EFC2DB20276041FC00E051A1 /* Assets.xcassets */; };
@@ -28,6 +30,8 @@
 		327D51E9288521D70009AD1C /* ProcessManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProcessManager.swift; sourceTree = "<group>"; };
 		32979BD52868B78000C56C63 /* WebView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = WebView.swift; sourceTree = "<group>"; };
 		329A7594288A895000F1C076 /* Credentials.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Credentials.swift; sourceTree = "<group>"; };
+		32B6832A29AC72C500B02829 /* ngvpn.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = ngvpn.plist; sourceTree = "<group>"; };
+		32B6832C29AD0BD000B02829 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		EFC2DB19276041FB00E051A1 /* SwiftConnect.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SwiftConnect.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		EFC2DB1C276041FB00E051A1 /* SwiftConnectApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftConnectApp.swift; sourceTree = "<group>"; };
 		EFC2DB1E276041FB00E051A1 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -69,6 +73,7 @@
 		EFC2DB1B276041FB00E051A1 /* SwiftConnect */ = {
 			isa = PBXGroup;
 			children = (
+				32B6832A29AC72C500B02829 /* ngvpn.plist */,
 				329A7594288A895000F1C076 /* Credentials.swift */,
 				32567B18286D742B0099C11A /* Utils.swift */,
 				327D51E9288521D70009AD1C /* ProcessManager.swift */,
@@ -83,6 +88,7 @@
 				EFC2DB25276041FC00E051A1 /* SwiftConnect.entitlements */,
 				EFC2DB332760936600E051A1 /* SwiftConnectDebug.entitlements */,
 				EFC2DB22276041FC00E051A1 /* Preview Content */,
+				32B6832C29AD0BD000B02829 /* Info.plist */,
 			);
 			path = SwiftConnect;
 			sourceTree = "<group>";
@@ -157,6 +163,8 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				32B6832D29AD0BD000B02829 /* Info.plist in Resources */,
+				32B6832B29AC72C500B02829 /* ngvpn.plist in Resources */,
 				EFC2DB24276041FC00E051A1 /* Preview Assets.xcassets in Resources */,
 				EFC2DB21276041FC00E051A1 /* Assets.xcassets in Resources */,
 			);

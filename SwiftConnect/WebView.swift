@@ -123,7 +123,7 @@ struct AutoFillData {
                         e.focus()
                         e.value = '\(value)';
                     }
-                },10);
+                },250);
                 """)
             }
         }
