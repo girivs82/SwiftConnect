@@ -98,7 +98,7 @@ class ProcessManager {
         let pid = getPID()
         if isProcessRunning(executableName: proc_name!, proc_id: pid) {
             launch(tool: URL(fileURLWithPath: "/usr/bin/sudo"),
-                   arguments: ["-k", "-S", "kill", String(pid)],
+                   arguments: ["-k", "-S", "kill", "-2", String(pid)],
                    input: Data("\(credentials!.sudo_password!)\n".utf8)) { status, output in
                 Logger.vpnProcess.info("[\(self.proc_name!)] completed")
                 }
