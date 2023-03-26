@@ -122,8 +122,16 @@ struct VPNLoginScreen: View {
             }.frame(maxWidth: .infinity, maxHeight: .infinity)
             Spacer().frame(height: 25)
             Button(action: {
-                self.credentials.samlv2 = self.useSAMLv2
-                vpn.start(credentials: credentials, save: saveToKeychain)
+                if canReachServer(server: self.credentials.portal) {
+                    self.credentials.samlv2 = self.useSAMLv2
+                    vpn.start(credentials: credentials, save: saveToKeychain)
+                }
+                else {
+                    let alert = NSAlert()
+                    alert.messageText = "Cannot reach vpn gateway"
+                    alert.informativeText = "The requested vpn gateway \(self.credentials.portal) is unreachable. Either the gateway is down or check your network settings."
+                    alert.runModal()
+                }
             }) {
                 Text("Connect")
             }.keyboardShortcut(.defaultAction)

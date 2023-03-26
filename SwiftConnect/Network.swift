@@ -19,6 +19,7 @@ class NetworkPathMonitor: ObservableObject {
     
     init() {
         monitor.pathUpdateHandler = { [weak self] path in
+            self?.tun_intf = false
             self?.path = path
             for intf in path.availableInterfaces {
                 let isOpenconnectRunning = ProcessManager.shared.isProcRunning()

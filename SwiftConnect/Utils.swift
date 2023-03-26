@@ -63,3 +63,34 @@ func load_gateways_from_plist(plist_name: String) -> [Server] {
     }
     return serverlist
 }
+
+private var urlSession:URLSession = {
+    var newConfiguration:URLSessionConfiguration = .default
+    newConfiguration.waitsForConnectivity = false
+    newConfiguration.allowsCellularAccess = true
+    return URLSession(configuration: newConfiguration)
+}()
+
+public func canReachServer(server: String) -> Bool
+{
+    let url = URL(string: server)
+    let semaphore = DispatchSemaphore(value: 0)
+    var success = false
+    let task = urlSession.dataTask(with: url!)
+    { data, response, error in
+        if error != nil
+        {
+            success = false
+        }
+        else
+        {
+            success = true
+        }
+        semaphore.signal()
+    }
+
+    task.resume()
+    semaphore.wait()
+
+    return success
+}
