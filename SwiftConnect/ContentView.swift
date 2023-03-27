@@ -58,6 +58,9 @@ struct VPNLaunchedScreen: View {
                 Button(action: { vpn.terminate() }) {
                     Text("Disconnect")
                 }.keyboardShortcut(.defaultAction)
+                Button(action: { vpn.restart() }) {
+                    Text("Reconnect")
+                }
         }
             Button(action: { vpn.state = .viewlogs }) {
             Text("logs").underline()
