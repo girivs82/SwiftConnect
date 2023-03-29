@@ -36,7 +36,6 @@ class NetworkPathMonitor: ObservableObject {
             }
             DispatchQueue.main.async {
                 VPNController.shared.state = self!.tun_intf! ? .launched : .stopped
-                AppDelegate.shared.networkDidDrop(dropped: !(path.status == .satisfied))
                 AppDelegate.shared.vpnConnectionDidChange(connected: self!.tun_intf!)
             }
         }

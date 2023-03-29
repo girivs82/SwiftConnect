@@ -22,6 +22,27 @@ struct VisualEffect: NSViewRepresentable {
     func updateNSView(_ nsView: NSView, context: Context) { }
 }
 
+struct VPNLogScreen: View {
+    @EnvironmentObject var vpn: VPNController
+    @State private var logtext: String = ""
+    
+    var body: some View {
+        VStack {
+            TextEditor(text: $logtext)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .lineLimit(100)
+            Spacer().frame(height: 25)
+            Button(action: {
+                readLogEntries(category: "openconnect") { result in
+                logtext = result
+                }
+            }) { Text("Show Logs").frame(maxHeight: 25) }
+            Spacer().frame(height: 25)
+            Button(action: { vpn.state = .launched  }) { Text("Back").frame(maxHeight: 25) }
+        }
+    }
+}
+
 struct VPNLaunchedScreen: View {
     @EnvironmentObject var credentials: Credentials
     @EnvironmentObject var vpn: VPNController
@@ -38,7 +59,7 @@ struct VPNLaunchedScreen: View {
                     Text("Disconnect")
                 }.keyboardShortcut(.defaultAction)
         }
-        Button(action: { vpn.openLogFile() }) {
+            Button(action: { vpn.state = .viewlogs }) {
             Text("logs").underline()
                 .foregroundColor(Color.gray)
                 .fixedSize(horizontal: false, vertical: true)
@@ -199,6 +220,7 @@ struct ContentView: View {
             case .webauth: VPNWebAuthScreen(mesgURL: URL(string: self.credentials.preauth!.login_url!)!).frame(width: 800, height: 450)
             case .processing: ProgressView().frame(width: windowSize.width, height: windowSize.height)
             case .launched: VPNLaunchedScreen().frame(width: windowSize.width, height: windowSize.height)
+            case .viewlogs: VPNLogScreen().frame(width: 800, height: 450)
             }
         }
         .padding(windowInsets)

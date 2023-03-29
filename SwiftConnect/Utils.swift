@@ -9,6 +9,7 @@ import SwiftUI
 import Foundation
 import Darwin
 import os.log
+import OSLog
 
 func ??<T>(lhs: Binding<Optional<T>>, rhs: T) -> Binding<T> {
     Binding(
@@ -34,6 +35,7 @@ extension Logger {
     /// Logs the view cycles like viewDidLoad.
     static let viewCycle = Logger(subsystem: subsystem, category: "viewcycle")
     static let vpnProcess = Logger(subsystem: subsystem, category: "vpnProcess")
+    static let openconnect = Logger(subsystem: subsystem, category: "openconnect")
 }
 
 func load_gateways_from_plist(plist_name: String) -> [Server] {
@@ -93,4 +95,33 @@ public func canReachServer(server: String) -> Bool
     semaphore.wait()
 
     return success
+}
+
+func getLogEntries(category: String) throws -> [OSLogEntryLog] {
+    // Open the log store.
+    let logStore = try OSLogStore(scope: .currentProcessIdentifier)
+    
+    // Get all the logs from the last hour.
+    let oneHourAgo = logStore.position(date: Date().addingTimeInterval(-3600))
+    
+    // Fetch log objects.
+    let allEntries = try logStore.getEntries(at: oneHourAgo)
+    
+    // Filter the log to be relevant for our specific subsystem
+    // and remove other elements (signposts, etc).
+    return allEntries
+        .compactMap { $0 as? OSLogEntryLog }
+        .filter { $0.subsystem == Bundle.main.bundleIdentifier! && $0.category == category }
+}
+
+func readLogEntries(category: String, completion: @escaping (String)->()) {
+    var logtext: String = ""
+
+    DispatchQueue.main.async {
+        let logs = try! getLogEntries(category: category)
+        for log in logs {
+            logtext += "\(log.composedMessage)\n"
+        }
+        completion(logtext) // call completion after you have the result
+    }
 }

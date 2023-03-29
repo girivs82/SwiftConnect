@@ -9,9 +9,10 @@ import Foundation
 import SwiftUI
 import Security
 import os.log
+import OSLog
 
 enum VPNState {
-    case stopped, webauth, processing, launched
+    case stopped, webauth, processing, launched, viewlogs
     
     var description : String {
       switch self {
@@ -19,6 +20,7 @@ enum VPNState {
       case .webauth: return "webauth"
       case .processing: return "launching"
       case .launched: return "launched"
+      case .viewlogs: return "viewlogs"
       }
     }
 }
@@ -135,12 +137,6 @@ class VPNController: ObservableObject {
     func terminate() {
         state = .processing
         ProcessManager.shared.terminateProcess(credentials: self.credentials)
-    }
-    
-    func openLogFile() {
-        if let url = currentLogURL {
-            NSWorkspace.shared.open(url)
-        }
     }
 }
 

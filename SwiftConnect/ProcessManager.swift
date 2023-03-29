@@ -124,15 +124,20 @@ class ProcessManager {
         let group = DispatchGroup()
         let inputPipe = Pipe()
         let outputPipe = Pipe()
+        let errorPipe = Pipe()
         
         var errorQ: Error? = nil
         var output = Data()
+        var err = Data()
+        var stdoutLines : String = ""
+        var stderrLines : String = ""
 
         let proc = Process()
         proc.executableURL = tool
         proc.arguments = arguments
         proc.standardInput = inputPipe
         proc.standardOutput = outputPipe
+        proc.standardError = errorPipe
         // Prepare an environment as close to a new macOS user account as possible
         let cleanenvvars = ["TERM_PROGRAM", "SHELL", "TERM", "TMPDIR", "Apple_PubSub_Socket_Render", "TERM_PROGRAM_VERSION", "TERM_SESSION_ID", "USER", "SSH_AUTH_SOCK", "__CF_USER_TEXT_ENCODING", "XPC_FLAGS", "XPC_SERVICE_NAME", "SHLVL", "HOME", "LOGNAME", "LC_CTYPE", "_"]
         proc.environment = cleanenvvars.reduce(into: [String: String]()) { $0[$1] = "" }
@@ -234,10 +239,71 @@ class ProcessManager {
             readIO.read(offset: 0, length: .max, queue: .main) { isDone, chunkQ, error in
                 let d = chunkQ as AnyObject as! Data
                 let d_str = String(decoding: d, as: UTF8.self)
-                print("\(d_str)", terminator:"")
+                stdoutLines = stdoutLines + d_str
+                var outArray = stdoutLines.split(whereSeparator: \.isNewline)
+                if !stdoutLines.hasSuffix("\n") && !outArray.isEmpty {
+                    outArray.removeLast()
+                }
+                if let index = stdoutLines.lastIndex(of: "\n") {
+                    stdoutLines = String(stdoutLines.suffix(from: index).dropFirst())
+                }
+                for line in outArray {
+                    Logger.openconnect.info("\(line)")
+                    //print("[openconnect stdout] \(line)")
+                    // Identify DTLS connection
+                    if line.hasPrefix("Established DTLS connection") {
+                        DispatchQueue.main.async {
+                            if AppDelegate.network_dropped != false {
+                                AppDelegate.network_dropped = false
+                                AppDelegate.shared.networkDidDrop(dropped: false)
+                            }
+                        }
+                    }
+                }
+                //print("\(d_str)", terminator:"")
                 output.append(contentsOf: chunkQ ?? .empty)
                 if isDone || error != 0 {
                     readIO.close()
+                    if errorQ == nil && error != 0 { errorQ = posixErr(error) }
+                    group.leave()
+                }
+            }
+            
+            //Do the same for the error pipe
+            group.enter()
+            let errorIO = DispatchIO(type: .stream, fileDescriptor: errorPipe.fileHandleForReading.fileDescriptor, queue: .main) { _ in
+                try! errorPipe.fileHandleForReading.close()
+            }
+            errorIO.setLimit(lowWater: 1)
+            errorIO.setLimit(highWater: 64)
+            errorIO.read(offset: 0, length: .max, queue: .main) { isDone, chunkQ, error in
+                let d = chunkQ as AnyObject as! Data
+                let d_str = String(decoding: d, as: UTF8.self)
+                stderrLines = stderrLines + d_str
+                var errArray = stderrLines.split(whereSeparator: \.isNewline)
+                if !stderrLines.hasSuffix("\n") && !errArray.isEmpty {
+                    errArray.removeLast()
+                }
+                if let index = stderrLines.lastIndex(of: "\n") {
+                    stderrLines = String(stderrLines.suffix(from: index).dropFirst())
+                }
+                for line in errArray {
+                    Logger.openconnect.error("\(line)")
+                    //print("[openconnect stderr] \(line)")
+                    // Identify DTLS handshake failure
+                    if line.hasPrefix("Failed to reconnect to host") || line.hasPrefix("DTLS Dead Peer Detection detected dead peer!") || line.hasPrefix("DTLS handshake failed") {
+                        DispatchQueue.main.async {
+                            if AppDelegate.network_dropped != true {
+                                AppDelegate.network_dropped = true
+                                AppDelegate.shared.networkDidDrop(dropped: true)
+                            }
+                        }
+                    }
+                }
+                //print("\(d_str)", terminator:"")
+                err.append(contentsOf: chunkQ ?? .empty)
+                if isDone || error != 0 {
+                    errorIO.close()
                     if errorQ == nil && error != 0 { errorQ = posixErr(error) }
                     group.leave()
                 }
