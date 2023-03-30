@@ -248,7 +248,7 @@ class ProcessManager {
                     stdoutLines = String(stdoutLines.suffix(from: index).dropFirst())
                 }
                 for line in outArray {
-                    Logger.openconnect.info("\(line)")
+                    Logger.openconnect.info("\(line, privacy: .public)")
                     //print("[openconnect stdout] \(line)")
                     // Identify DTLS connection
                     if line.hasPrefix("Established DTLS connection") {
@@ -288,7 +288,7 @@ class ProcessManager {
                     stderrLines = String(stderrLines.suffix(from: index).dropFirst())
                 }
                 for line in errArray {
-                    Logger.openconnect.error("\(line)")
+                    Logger.openconnect.error("\(line, privacy: .public)")
                     //print("[openconnect stderr] \(line)")
                     // Identify DTLS handshake failure
                     if line.hasPrefix("Failed to reconnect to host") || line.hasPrefix("DTLS Dead Peer Detection detected dead peer!") || line.hasPrefix("DTLS handshake failed") {

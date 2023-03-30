@@ -29,12 +29,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         image.size = NSSize(width: 18, height: 18)
         return image
     }()
-    private lazy var icon_dead: NSImage = {
-        let image = NSImage(named: "Connected")!
-        image.size = NSSize(width: 18, height: 18)
-        image.backgroundColor = NSColor.gray
-        return image
-    }()
     private lazy var popover: NSPopover = {
         let popover = NSPopover()
         let contentView = ContentView()
@@ -55,15 +49,15 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
     private lazy var contextMenu: ContextMenu = ContextMenu(statusBarItem: statusItem)
     
     func vpnConnectionDidChange(connected: Bool) {
-        statusItem.button?.image = (connected) ? (AppDelegate.network_dropped) ? icon_dead : icon_connected : icon
-        statusItem.button?.image?.isTemplate = !connected
+        statusItem.button?.image = (connected) ? icon_connected : icon
+        statusItem.button?.image?.isTemplate = !connected || AppDelegate.network_dropped
         //popover.contentViewController.
         //generateNotification(sound: "NO", title: (connected) ? "VPN Connected" : "VPN Disconnected", body: (connected) ? "VPN is now connected." : "VPN is now disconnected.")
     }
     
     func networkDidDrop(dropped: Bool) {
+        statusItem.button?.image = icon_connected
         statusItem.button?.image?.isTemplate = dropped
-        statusItem.button?.image = (dropped) ? icon_dead : icon_connected
         if dropped {
             generateNotification(sound: "NO", title: "Gateway connection failed", body: "openconnect lost connection to the gateway. Please troubleshoot your network.")
         } else {

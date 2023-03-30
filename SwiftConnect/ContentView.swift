@@ -156,6 +156,7 @@ struct VPNLoginScreen: View {
             }) {
                 Text("Connect")
             }.keyboardShortcut(.defaultAction)
+                .disabled(self.credentials.portal.isEmpty || self.credentials.username!.isEmpty || self.credentials.password!.isEmpty || self.credentials.sudo_password!.isEmpty || self.credentials.bin_path!.isEmpty)
         }
     }
 }
