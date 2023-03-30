@@ -56,6 +56,9 @@ class VPNController: ObservableObject {
     private var authMgr: AuthManager?;
     private var authReqResp: AuthRequestResp?;
     static let shared = VPNController()
+
+    private var server_cert_hash: String?;
+    private var session_token: String?;
     
     func initialize (credentials: Credentials?) {
         self.credentials = credentials
@@ -99,6 +102,15 @@ class VPNController: ObservableObject {
         Logger.vpnProcess.info("[openconnect] launched")
         AppDelegate.shared.pinPopover = false
     }
+
+    public func restartvpn(_ onLaunch: @escaping (_ succ: Bool) -> Void) {
+        terminate(forgetAuth: false)
+        startvpn(session_token: self.session_token, server_cert_hash: self.server_cert_hash, onLaunch)
+    }
+    
+    public func restart() {
+        restartvpn() {succ in}
+    }
     
     func preAuthCallback(authResp: AuthRequestResp?) -> Void {
         self.authReqResp = authResp
@@ -129,13 +141,18 @@ class VPNController: ObservableObject {
             Logger.vpnProcess.error("postAuthCallback: Session cookie not found!!!")
             return
         }
-        let server_cert_hash = authResp?.server_cert_hash
-        self.startvpn(session_token: session_token, server_cert_hash: server_cert_hash) { succ in
+        self.server_cert_hash = authResp?.server_cert_hash
+        self.session_token = session_token
+        self.startvpn(session_token: self.session_token, server_cert_hash: self.server_cert_hash) { succ in
         }
     }
     
-    func terminate() {
+    func terminate(forgetAuth: Bool = true) {
         state = .processing
+        if forgetAuth {
+            self.server_cert_hash = nil
+            self.session_token = nil
+        }
         ProcessManager.shared.terminateProcess(credentials: self.credentials)
     }
 }
