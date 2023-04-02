@@ -127,16 +127,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         return getuid() == 0;
     }
     
-    func relaunch() {
-        let bin = Bundle.main.executablePath!;
-        print("Relaunch: sudo \(bin)");
-        let _ = try! runAndPrint(bash: """
-            osascript -e "do shell script \\"sudo '\(bin)' > /dev/null 2>&1 &\\" with prompt \\"Start OpenConnect on privileged mode\\" with administrator privileges"
-        """);
-        NSApp.terminate(nil)
-    }
-}
-    
     func generateNotification (sound:String, title:String , body:String) {
         if #available(OSX 10.14, *) {
             UNUserNotificationCenter.current().delegate = NotificationCenterDelegate.shared // must have delegate, otherwise notification won't appear

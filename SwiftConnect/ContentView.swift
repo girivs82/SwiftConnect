@@ -206,7 +206,6 @@ struct ContentView: View {
     @StateObject var vpn : VPNController = VPNController.shared
     
     init(forceState: VPNState? = nil) {
-        self.forceState = forceState;
         _credentials = StateObject(wrappedValue: Credentials())
     }
     
@@ -227,13 +226,6 @@ struct ContentView: View {
     }
     
     static let inPreview: Bool = ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] == "1";
-}
-
-
-struct VPNLoginScreen_Previews: PreviewProvider {
-    static var previews: some View {
-        ContentView(forceState: VPNState.stopped)
-    }
 }
 
 struct ProgressView_Previews: PreviewProvider {

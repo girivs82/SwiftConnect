@@ -13,7 +13,6 @@
 		327D51EA288521D70009AD1C /* ProcessManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 327D51E9288521D70009AD1C /* ProcessManager.swift */; };
 		32979BD62868B78000C56C63 /* WebView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32979BD52868B78000C56C63 /* WebView.swift */; };
 		329A7595288A895000F1C076 /* Credentials.swift in Sources */ = {isa = PBXBuildFile; fileRef = 329A7594288A895000F1C076 /* Credentials.swift */; };
-		32B6832D29AD0BD000B02829 /* Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 32B6832C29AD0BD000B02829 /* Info.plist */; };
 		32B6832F29AD28F300B02829 /* ngvpn.plist in Resources */ = {isa = PBXBuildFile; fileRef = 32B6832E29AD28F300B02829 /* ngvpn.plist */; };
 		EFC2DB1D276041FB00E051A1 /* SwiftConnectApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = EFC2DB1C276041FB00E051A1 /* SwiftConnectApp.swift */; };
 		EFC2DB1F276041FB00E051A1 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EFC2DB1E276041FB00E051A1 /* ContentView.swift */; };
@@ -131,7 +130,7 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 1310;
-				LastUpgradeCheck = 1400;
+				LastUpgradeCheck = 1420;
 				TargetAttributes = {
 					EFC2DB18276041FB00E051A1 = {
 						CreatedOnToolsVersion = 13.1;
@@ -163,7 +162,6 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				32B6832D29AD0BD000B02829 /* Info.plist in Resources */,
 				EFC2DB24276041FC00E051A1 /* Preview Assets.xcassets in Resources */,
 				32B6832F29AD28F300B02829 /* ngvpn.plist in Resources */,
 				EFC2DB21276041FC00E051A1 /* Assets.xcassets in Resources */,
