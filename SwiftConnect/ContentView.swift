@@ -69,14 +69,6 @@ struct VPNLaunchedScreen: View {
     }
 }
 
-struct VPNLaunchedScreen_Previews: PreviewProvider {
-    static var previews: some View {
-        VPNLaunchedScreen()
-            .padding(windowInsets)
-            .frame(width: windowSize.width, height: windowSize.height).background(VisualEffect())
-    }
-}
-
 struct VPNLoginScreen: View {
     @EnvironmentObject var vpn: VPNController
     @EnvironmentObject var credentials: Credentials
@@ -213,6 +205,10 @@ struct ContentView: View {
     @StateObject var credentials : Credentials = AppDelegate.shared.credentials!
     @StateObject var vpn : VPNController = VPNController.shared
     
+    init(forceState: VPNState? = nil) {
+        self.forceState = forceState;
+        _credentials = StateObject(wrappedValue: Credentials())
+    }
     
     var body: some View {
         VStack {
@@ -228,6 +224,21 @@ struct ContentView: View {
         .background(VisualEffect())
         .environmentObject(credentials)
         .environmentObject(vpn)
+    }
+    
+    static let inPreview: Bool = ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] == "1";
+}
+
+
+struct VPNLoginScreen_Previews: PreviewProvider {
+    static var previews: some View {
+        ContentView(forceState: VPNState.stopped)
+    }
+}
+
+struct ProgressView_Previews: PreviewProvider {
+    static var previews: some View {
+        ContentView(forceState: VPNState.processing)
     }
 }
 
