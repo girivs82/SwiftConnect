@@ -85,7 +85,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         // Just initialize the shared objects for vpncontroller, processmanager and networkpathmonitor here for them to run early
         self.credentials = Credentials.shared
         VPNController.shared.initialize(credentials: self.credentials)
-        ProcessManager.shared.initialize(proc_name: "openconnect", pid_file: URL(string: "file:///var/run/openconnect.pid"))
         _ = NetworkPathMonitor.shared
         // Initialize statusItem
         statusItem.button!.target = self
@@ -93,6 +92,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
 
     func applicationWillTerminate(_ aNotification: Notification) {
         // Insert code here to tear down your application
+        DispatchQueue.main.async {
+            ProcessManager.shared.terminateProcess(credentials: Credentials.shared)
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+            NSApp.terminate(nil)
+        }
     }
     
     func popoverWillShow(_ notification: Notification) {

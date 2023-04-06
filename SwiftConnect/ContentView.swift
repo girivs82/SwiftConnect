@@ -8,7 +8,7 @@
 import SwiftUI
 
 let windowSize = CGSize(width: 250, height: 480)
-let windowInsets = EdgeInsets(top: 30, leading: 30, bottom: 30, trailing: 30)
+let windowInsets = EdgeInsets(top: 10, leading: 10, bottom: 10, trailing: 10)
 
 struct VisualEffect: NSViewRepresentable {
     func makeNSView(context: Self.Context) -> NSView {
@@ -213,10 +213,10 @@ struct ContentView: View {
         VStack {
             switch (vpn.state) {
             case .stopped: VPNLoginScreen().frame(width: windowSize.width, height: windowSize.height)
-            case .webauth: VPNWebAuthScreen(mesgURL: URL(string: self.credentials.preauth!.login_url!)!).frame(width: 800, height: 450)
+            case .webauth: VPNWebAuthScreen(mesgURL: URL(string: self.credentials.preauth!.login_url!)!).frame(width: 480, height: 650)
             case .processing: ProgressView().frame(width: windowSize.width, height: windowSize.height)
             case .launched: VPNLaunchedScreen().frame(width: windowSize.width, height: windowSize.height)
-            case .viewlogs: VPNLogScreen().frame(width: 800, height: 450)
+            case .viewlogs: VPNLogScreen().frame(width: 480, height: 650)
             }
         }
         .padding(windowInsets)

@@ -11,14 +11,8 @@ import Darwin
 import os.log
 
 class ProcessManager {
-    private var proc_name : String?
-    private var pid_file_path : URL?
+    private var pid: Int32 = -1
     static let shared = ProcessManager()
-    
-    public func initialize(proc_name: String?, pid_file: URL?) {
-        self.proc_name = proc_name
-        self.pid_file_path = pid_file
-    }
     
     fileprivate func GetBSDProcessList() -> ([kinfo_proc]?)  {
 
@@ -59,49 +53,33 @@ class ProcessManager {
     }
 
     // NOTE: sysctl kp_proc.p_comm char array only stores first 16 characters of process name, so remember that when searching for a process using its name
-    fileprivate func isProcessRunning(executableName: String, proc_id: Int32) -> Bool { //processes: [kinfo_proc]?
+    fileprivate func isValidProcess(ppid: Int32) -> Bool {
         let processes = GetBSDProcessList()!
         for process in processes {
-            let name = withUnsafePointer(to: process.kp_proc.p_comm) {
-                $0.withMemoryRebound(to: UInt8.self, capacity: MemoryLayout.size(ofValue: $0)) {
-                    String(cString: $0)
-                }
-            }
-            if name == executableName {
-                let p_pid = process.kp_proc.p_pid
-                if p_pid == proc_id {
-                    return true
-                }
+            if process.kp_eproc.e_ppid == ppid {
+                let name = withUnsafePointer(to: process.kp_proc.p_comm) {
+                                $0.withMemoryRebound(to: UInt8.self, capacity: MemoryLayout.size(ofValue: $0)) {
+                                    String(cString: $0)
+                                }
+                            }
+                return name == "openconnect"
             }
         }
         return false
     }
-
-    fileprivate func getPID() -> Int32 {
-        var pid : Int32 = -1
-        do {
-            let strPID = try String(contentsOf: self.pid_file_path!, encoding: String.Encoding.utf8).trimmingCharacters(in: ["\n"])
-            pid = Int32(strPID)!
-        }
-        catch {
-
-        }
-        return  pid
-    }
     
     public func isProcRunning() -> Bool {
-        let pid = getPID()
-        return isProcessRunning(executableName: proc_name!, proc_id: pid)
+        return self.isValidProcess(ppid: self.pid)
     }
     
     public func terminateProcess(credentials: Credentials?) -> Void {
-        let pid = getPID()
-        if isProcessRunning(executableName: proc_name!, proc_id: pid) {
+        if self.isValidProcess(ppid: self.pid) {
             launch(tool: URL(fileURLWithPath: "/usr/bin/sudo"),
-                   arguments: ["-k", "-S", "kill", "-2", String(pid)],
+                   arguments: ["-k", "-S", "kill", String(pid)],
                    input: Data("\(credentials!.sudo_password!)\n".utf8)) { status, output in
-                Logger.vpnProcess.info("[\(self.proc_name!)] completed")
+                Logger.vpnProcess.info("[openconnect] completed")
                 }
+            self.pid = -1
         }
     }
     
@@ -317,5 +295,6 @@ class ProcessManager {
             errorQ = error
             proc.terminationHandler!(proc)
         }
+        self.pid = proc.processIdentifier
     }
 }

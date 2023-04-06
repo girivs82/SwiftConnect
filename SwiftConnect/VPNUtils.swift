@@ -56,7 +56,7 @@ class VPNController: ObservableObject {
     private var authMgr: AuthManager?;
     private var authReqResp: AuthRequestResp?;
     static let shared = VPNController()
-    
+
     func initialize (credentials: Credentials?) {
         self.credentials = credentials
     }
@@ -68,8 +68,14 @@ class VPNController: ObservableObject {
         }
         credentials.load_sudo_password()
         if credentials.samlv2 {
-            self.authMgr = AuthManager(credentials: credentials, preAuthCallback: preAuthCallback, authCookieCallback: authCookieCallback, postAuthCallback: postAuthCallback)
-            self.authMgr!.pre_auth()
+            if credentials.portal.hasSuffix("SAML-EXT") {
+                self.startvpn(ext_browser: true) { succ in
+                }
+            }
+            else if credentials.portal.hasSuffix("SAML") {
+                self.authMgr = AuthManager(credentials: credentials, preAuthCallback: preAuthCallback, authCookieCallback: authCookieCallback, postAuthCallback: postAuthCallback)
+                self.authMgr!.pre_auth()
+            }
         }
         else {
             self.startvpn() { succ in
@@ -77,21 +83,31 @@ class VPNController: ObservableObject {
         }
     }
     
-    public func startvpn(session_token: String? = "", server_cert_hash: String? = "", _ onLaunch: @escaping (_ succ: Bool) -> Void) {
+    public func startvpn(session_token: String? = "", server_cert_hash: String? = "", ext_browser: Bool? = false, _ onLaunch: @escaping (_ succ: Bool) -> Void) {
         state = .processing
         
         // Prepare commands
         Logger.vpnProcess.info("[openconnect] start")
         if credentials!.samlv2 {
-            ProcessManager.shared.launch(tool: URL(fileURLWithPath: "/usr/bin/sudo"),
-                                         arguments: ["-k", "-S", credentials!.bin_path!, "-b", "--protocol=\(proto)", "--pid-file=/var/run/openconnect.pid", "--cookie-on-stdin", "--servercert=\(server_cert_hash!)", "\(credentials!.portal)"],
-                input: Data("\(credentials!.sudo_password!)\n\(session_token!)\n".utf8)) { status, output in
+            // External browser invocation
+            if ext_browser! {
+                ProcessManager.shared.launch(tool: URL(fileURLWithPath: "/usr/bin/sudo"),
+                                             arguments: ["-k", "-S", credentials!.bin_path!, "--protocol=\(proto)", credentials!.portal],
+                                             input: Data("\(credentials!.sudo_password!)\n".utf8)) { status, output in
                     Logger.vpnProcess.info("[openconnect] completed")
                 }
+            }
+            else {
+                ProcessManager.shared.launch(tool: URL(fileURLWithPath: "/usr/bin/sudo"),
+                                             arguments: ["-k", "-S", credentials!.bin_path!, "--protocol=\(proto)", "--cookie-on-stdin", "--servercert=\(server_cert_hash!)", "\(credentials!.portal)"],
+                                             input: Data("\(credentials!.sudo_password!)\n\(session_token!)\n".utf8)) { status, output in
+                    Logger.vpnProcess.info("[openconnect] completed")
+                }
+            }
         }
         else {
             ProcessManager.shared.launch(tool: URL(fileURLWithPath: "/usr/bin/sudo"),
-                                         arguments: ["-k", "-S", credentials!.bin_path!, "-b", "--protocol=\(proto)", "--pid-file=/var/run/openconnect.pid", "-u", "\(credentials!.username!)", "--passwd-on-stdin", "\(credentials!.portal)"],
+                                         arguments: ["-k", "-S", credentials!.bin_path!, "--protocol=\(proto)", "-u", "\(credentials!.username!)", "--passwd-on-stdin", "\(credentials!.portal)"],
                                          input: Data("\(credentials!.sudo_password!)\n\(credentials!.password!)\n".utf8)) { status, output in
                     Logger.vpnProcess.info("[openconnect] completed")
                 }
@@ -130,7 +146,7 @@ class VPNController: ObservableObject {
             return
         }
         let server_cert_hash = authResp?.server_cert_hash
-        self.startvpn(session_token: session_token, server_cert_hash: server_cert_hash) { succ in
+        self.startvpn(session_token: session_token, server_cert_hash: server_cert_hash, ext_browser: false) { succ in
         }
     }
     
