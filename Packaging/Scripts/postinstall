@@ -1,0 +1,4 @@
+#!/bin/zsh
+
+# Call the Mach-O binary directly to register the agent.
+"/Library/Application Support/mikaana/SwiftConnect.app/Contents/MacOS/SwiftConnect" register

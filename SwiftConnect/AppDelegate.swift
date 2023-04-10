@@ -69,6 +69,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         Self.shared = self;
         // Hide app window
         NSApplication.shared.windows.first?.close()
+//        DispatchQueue.global().async {
+//            Commands.register()
+//        }
+        
     }
     
     func applicationDidFinishLaunching(_ aNotification: Notification) {

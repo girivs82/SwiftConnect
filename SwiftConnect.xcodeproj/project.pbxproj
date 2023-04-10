@@ -3,10 +3,14 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 55;
+	objectVersion = 56;
 	objects = {
 
 /* Begin PBXBuildFile section */
+		3202211829E2863500588571 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3202211729E2863500588571 /* main.swift */; };
+		3202211E29E2887400588571 /* HelperCommands.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3202211D29E2887400588571 /* HelperCommands.swift */; };
+		3202211F29E28BC200588571 /* SwiftConnect-helper in Resources */ = {isa = PBXBuildFile; fileRef = 3202211529E2863500588571 /* SwiftConnect-helper */; };
+		3202212329E28C6500588571 /* com.xpc.swiftconnect.agent.plist in CopyFiles */ = {isa = PBXBuildFile; fileRef = 3202211C29E2869800588571 /* com.xpc.swiftconnect.agent.plist */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		32567B17286C12190099C11A /* Network.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32567B16286C12190099C11A /* Network.swift */; };
 		32567B19286D742B0099C11A /* Utils.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32567B18286D742B0099C11A /* Utils.swift */; };
 		3272F74D2867278400223D4F /* AuthManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3272F74C2867278400223D4F /* AuthManager.swift */; };
@@ -22,7 +26,54 @@
 		EFC2DB352760939300E051A1 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = EFC2DB342760939300E051A1 /* AppDelegate.swift */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXContainerItemProxy section */
+		3202212029E28C2000588571 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = EFC2DB11276041FB00E051A1 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 3202211429E2863500588571;
+			remoteInfo = "SwiftConnect-helper";
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		3202210229E2845300588571 /* Embed XPC Services */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "$(CONTENTS_FOLDER_PATH)/XPCServices";
+			dstSubfolderSpec = 16;
+			files = (
+			);
+			name = "Embed XPC Services";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		3202211329E2863500588571 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
+		3202212229E28C4600588571 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = Contents/Library/LaunchAgents;
+			dstSubfolderSpec = 1;
+			files = (
+				3202212329E28C6500588571 /* com.xpc.swiftconnect.agent.plist in CopyFiles */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
+		3202211529E2863500588571 /* SwiftConnect-helper */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = "SwiftConnect-helper"; sourceTree = BUILT_PRODUCTS_DIR; };
+		3202211729E2863500588571 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
+		3202211C29E2869800588571 /* com.xpc.swiftconnect.agent.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = com.xpc.swiftconnect.agent.plist; sourceTree = "<group>"; };
+		3202211D29E2887400588571 /* HelperCommands.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HelperCommands.swift; sourceTree = "<group>"; };
+		3202214429E3261400588571 /* Packaging */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Packaging; sourceTree = "<group>"; };
 		32567B16286C12190099C11A /* Network.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Network.swift; sourceTree = "<group>"; };
 		32567B18286D742B0099C11A /* Utils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Utils.swift; sourceTree = "<group>"; };
 		3272F74C2867278400223D4F /* AuthManager.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AuthManager.swift; sourceTree = "<group>"; };
@@ -43,6 +94,13 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		3202211229E2863500588571 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		EFC2DB16276041FB00E051A1 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -53,10 +111,22 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		3202211629E2863500588571 /* SwiftConnect-helper */ = {
+			isa = PBXGroup;
+			children = (
+				3202211729E2863500588571 /* main.swift */,
+				327D51E9288521D70009AD1C /* ProcessManager.swift */,
+				3202211C29E2869800588571 /* com.xpc.swiftconnect.agent.plist */,
+			);
+			path = "SwiftConnect-helper";
+			sourceTree = "<group>";
+		};
 		EFC2DB10276041FB00E051A1 = {
 			isa = PBXGroup;
 			children = (
+				3202214429E3261400588571 /* Packaging */,
 				EFC2DB1B276041FB00E051A1 /* SwiftConnect */,
+				3202211629E2863500588571 /* SwiftConnect-helper */,
 				EFC2DB1A276041FB00E051A1 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -65,6 +135,7 @@
 			isa = PBXGroup;
 			children = (
 				EFC2DB19276041FB00E051A1 /* SwiftConnect.app */,
+				3202211529E2863500588571 /* SwiftConnect-helper */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -75,7 +146,6 @@
 				32B6832E29AD28F300B02829 /* ngvpn.plist */,
 				329A7594288A895000F1C076 /* Credentials.swift */,
 				32567B18286D742B0099C11A /* Utils.swift */,
-				327D51E9288521D70009AD1C /* ProcessManager.swift */,
 				32979BD52868B78000C56C63 /* WebView.swift */,
 				EFC2DB1C276041FB00E051A1 /* SwiftConnectApp.swift */,
 				EFC2DB1E276041FB00E051A1 /* ContentView.swift */,
@@ -88,6 +158,7 @@
 				EFC2DB332760936600E051A1 /* SwiftConnectDebug.entitlements */,
 				EFC2DB22276041FC00E051A1 /* Preview Content */,
 				32B6832C29AD0BD000B02829 /* Info.plist */,
+				3202211D29E2887400588571 /* HelperCommands.swift */,
 			);
 			path = SwiftConnect;
 			sourceTree = "<group>";
@@ -103,6 +174,23 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		3202211429E2863500588571 /* SwiftConnect-helper */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 3202211929E2863500588571 /* Build configuration list for PBXNativeTarget "SwiftConnect-helper" */;
+			buildPhases = (
+				3202211129E2863500588571 /* Sources */,
+				3202211229E2863500588571 /* Frameworks */,
+				3202211329E2863500588571 /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = "SwiftConnect-helper";
+			productName = "SwiftConnect-helper";
+			productReference = 3202211529E2863500588571 /* SwiftConnect-helper */;
+			productType = "com.apple.product-type.tool";
+		};
 		EFC2DB18276041FB00E051A1 /* SwiftConnect */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = EFC2DB28276041FC00E051A1 /* Build configuration list for PBXNativeTarget "SwiftConnect" */;
@@ -110,10 +198,14 @@
 				EFC2DB15276041FB00E051A1 /* Sources */,
 				EFC2DB16276041FB00E051A1 /* Frameworks */,
 				EFC2DB17276041FB00E051A1 /* Resources */,
+				3202210229E2845300588571 /* Embed XPC Services */,
+				3202212229E28C4600588571 /* CopyFiles */,
+				32B9E53A29E32B1100717402 /* Generate Package */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				3202212129E28C2000588571 /* PBXTargetDependency */,
 			);
 			name = SwiftConnect;
 			packageProductDependencies = (
@@ -129,16 +221,19 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
-				LastSwiftUpdateCheck = 1310;
+				LastSwiftUpdateCheck = 1430;
 				LastUpgradeCheck = 1420;
 				TargetAttributes = {
+					3202211429E2863500588571 = {
+						CreatedOnToolsVersion = 14.3;
+					};
 					EFC2DB18276041FB00E051A1 = {
 						CreatedOnToolsVersion = 13.1;
 					};
 				};
 			};
 			buildConfigurationList = EFC2DB14276041FB00E051A1 /* Build configuration list for PBXProject "SwiftConnect" */;
-			compatibilityVersion = "Xcode 13.0";
+			compatibilityVersion = "Xcode 14.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -153,6 +248,7 @@
 			projectRoot = "";
 			targets = (
 				EFC2DB18276041FB00E051A1 /* SwiftConnect */,
+				3202211429E2863500588571 /* SwiftConnect-helper */,
 			);
 		};
 /* End PBXProject section */
@@ -162,6 +258,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				3202211F29E28BC200588571 /* SwiftConnect-helper in Resources */,
 				EFC2DB24276041FC00E051A1 /* Preview Assets.xcassets in Resources */,
 				32B6832F29AD28F300B02829 /* ngvpn.plist in Resources */,
 				EFC2DB21276041FC00E051A1 /* Assets.xcassets in Resources */,
@@ -170,7 +267,39 @@
 		};
 /* End PBXResourcesBuildPhase section */
 
+/* Begin PBXShellScriptBuildPhase section */
+		32B9E53A29E32B1100717402 /* Generate Package */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"$(SRCROOT)/Packaging/generatePackage.zsh",
+				"$(SRCROOT)/Packaging/Scripts",
+			);
+			name = "Generate Package";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(BUILT_PRODUCTS_DIR)/SwiftConnect.pkg",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = ". \"${SCRIPT_INPUT_FILE_0}\"\n";
+		};
+/* End PBXShellScriptBuildPhase section */
+
 /* Begin PBXSourcesBuildPhase section */
+		3202211129E2863500588571 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				3202211829E2863500588571 /* main.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		EFC2DB15276041FB00E051A1 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -181,6 +310,7 @@
 				EFC2DB1F276041FB00E051A1 /* ContentView.swift in Sources */,
 				EFC2DB1D276041FB00E051A1 /* SwiftConnectApp.swift in Sources */,
 				32979BD62868B78000C56C63 /* WebView.swift in Sources */,
+				3202211E29E2887400588571 /* HelperCommands.swift in Sources */,
 				EFC2DB2C2760527800E051A1 /* VPNUtils.swift in Sources */,
 				32567B17286C12190099C11A /* Network.swift in Sources */,
 				3272F74D2867278400223D4F /* AuthManager.swift in Sources */,
@@ -190,7 +320,47 @@
 		};
 /* End PBXSourcesBuildPhase section */
 
+/* Begin PBXTargetDependency section */
+		3202212129E28C2000588571 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 3202211429E2863500588571 /* SwiftConnect-helper */;
+			targetProxy = 3202212029E28C2000588571 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
 /* Begin XCBuildConfiguration section */
+		3202211A29E2863500588571 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CODE_SIGN_IDENTITY = "Apple Development";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = RQZB56XVC3;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_USER_SELECTED_FILES = readonly;
+				MACOSX_DEPLOYMENT_TARGET = 13.3;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		3202211B29E2863500588571 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CODE_SIGN_IDENTITY = "Apple Development";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = RQZB56XVC3;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_USER_SELECTED_FILES = readonly;
+				MACOSX_DEPLOYMENT_TARGET = 13.3;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
 		EFC2DB26276041FC00E051A1 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -314,7 +484,8 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = SwiftConnect/SwiftConnectDebug.entitlements;
-				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_IDENTITY = "Apple Development: Shankar Giri (NUY45NFWXY)";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
@@ -323,6 +494,7 @@
 				DEVELOPMENT_TEAM = RQZB56XVC3;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
+				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = SwiftConnect/Info.plist;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
@@ -331,6 +503,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
 				MARKETING_VERSION = 0.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.mikaana.SwiftConnect;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -345,7 +518,8 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = SwiftConnect/SwiftConnect.entitlements;
-				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_IDENTITY = "Apple Development: Shankar Giri (NUY45NFWXY)";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
@@ -354,6 +528,7 @@
 				DEVELOPMENT_TEAM = RQZB56XVC3;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
+				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = SwiftConnect/Info.plist;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
@@ -362,6 +537,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
 				MARKETING_VERSION = 0.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.mikaana.SwiftConnect;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -373,6 +549,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		3202211929E2863500588571 /* Build configuration list for PBXNativeTarget "SwiftConnect-helper" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				3202211A29E2863500588571 /* Debug */,
+				3202211B29E2863500588571 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		EFC2DB14276041FB00E051A1 /* Build configuration list for PBXProject "SwiftConnect" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
