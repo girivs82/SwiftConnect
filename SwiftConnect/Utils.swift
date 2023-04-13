@@ -33,6 +33,7 @@ extension Logger {
     /// Logs the view cycles like viewDidLoad.
     static let viewCycle = Logger(subsystem: subsystem, category: "viewcycle")
     static let vpnProcess = Logger(subsystem: subsystem, category: "vpnProcess")
+    static let helperClient = Logger(subsystem: subsystem, category: "helperClient")
 }
 
 func load_gateways_from_plist(plist_name: String) -> [Server] {
@@ -49,15 +50,12 @@ func load_gateways_from_plist(plist_name: String) -> [Server] {
         
         // Get something from our Info.plist like MinimumOSVersion
         let serverarray = ((resourceFileDictionaryContent.object(forKey: "AnyConnectProfile") as! NSDictionary).object(forKey: "ServerList") as! NSDictionary).object(forKey: "HostEntry")! as! NSArray
-        //print(serverlist)
         for item in serverarray {
             let obj = item as! NSDictionary
             let key = obj.object(forKey: "HostName") as! String
             let val = "https://" + (obj.object(forKey: "HostAddress") as! String)
             let server = Server(serverName: key, id: val)
             serverlist.append(server)
-            //Or we can print out entire Info.plist dictionary to preview its content
-            //print(resourceFileDictionaryContent)
         }
     }
     return serverlist

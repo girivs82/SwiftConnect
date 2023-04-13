@@ -169,7 +169,6 @@ class ProcessManager {
                 }
                 for line in outArray {
                     Logger.openconnect.info("\(line, privacy: .public)")
-                    //print("[openconnect stdout] \(line)")
                     // Identify DTLS connection
                     if line.hasPrefix("Established DTLS connection") {
                         let request = xpc_dictionary_create_empty()
@@ -178,12 +177,12 @@ class ProcessManager {
                         var error: xpc_rich_error_t? = nil
                         let session = xpc_session_create_mach_service("com.xpc.swiftconnect.daemon.privileged_exec", queue, .none, &error)
                         if let error = error {
-                            print("Unable to create xpc_session \(error)")
+                            Logger.openconnect.error("Unable to create xpc_session \(error.description)")
                             exit(1)
                         }
                         error = xpc_session_send_message(session!, request)
                         if let error = error {
-                            print("Unable to send message \(error)")
+                            Logger.openconnect.error("Unable to send message \(error.description)")
                             exit(1)
                         }
                         xpc_session_cancel(session!)
@@ -196,7 +195,6 @@ class ProcessManager {
 ////                        }
                     }
                 }
-                //print("\(d_str)", terminator:"")
                 output.append(contentsOf: chunkQ ?? .empty)
                 if isDone || error != 0 {
                     readIO.close()
@@ -225,7 +223,6 @@ class ProcessManager {
                 }
                 for line in errArray {
                     Logger.openconnect.error("\(line, privacy: .public)")
-                    //print("[openconnect stderr] \(line)")
                     // Identify DTLS handshake failure
                     if line.hasPrefix("Failed to reconnect to host") || line.hasPrefix("DTLS Dead Peer Detection detected dead peer!") || line.hasPrefix("DTLS handshake failed") {
 //                        DispatchQueue.main.async {
@@ -236,7 +233,6 @@ class ProcessManager {
 //                        }
                     }
                 }
-                //print("\(d_str)", terminator:"")
                 err.append(contentsOf: chunkQ ?? .empty)
                 if isDone || error != 0 {
                     errorIO.close()
