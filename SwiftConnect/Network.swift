@@ -12,31 +12,26 @@ import os.log
 
 class NetworkPathMonitor: ObservableObject {
     @Published var path: NWPath? = nil
-    @Published var tun_intf : Bool? = nil
     static let shared = NetworkPathMonitor()
+    private var tun_intf : Bool? = nil
     
     let monitor = NWPathMonitor()
     
     init() {
-        monitor.pathUpdateHandler = { [weak self] path in
-            self?.tun_intf = false
-            self?.path = path
+        monitor.pathUpdateHandler = { path in
+            var tun_intf = false
             for intf in path.availableInterfaces {
-                let isOpenconnectRunning = ProcessManager.shared.isProcRunning()
-                let intf_info = "\(intf.name), \(intf.type), \(isOpenconnectRunning)"
+                let intf_info = "\(intf.name), \(intf.type)"
                 Logger.vpnProcess.info("\(intf_info)")
-                if intf.name.hasPrefix("utun") && isOpenconnectRunning {
-                    self?.tun_intf = true
+                tun_intf = intf.name.hasPrefix("utun")
+                if tun_intf == true {
                     break
-                    
-                }
-                else {
-                    self?.tun_intf = false
                 }
             }
-            DispatchQueue.main.async {
-                VPNController.shared.state = self!.tun_intf! ? .launched : .stopped
-                AppDelegate.shared.vpnConnectionDidChange(connected: self!.tun_intf!)
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                let vpn_intf = (tun_intf == true) && Commands.is_running()
+                VPNController.shared.state = vpn_intf ? .launched : .stopped
+                AppDelegate.shared.vpnConnectionDidChange(connected: vpn_intf)
             }
         }
         monitor.start(queue: DispatchQueue.global(qos: .background))

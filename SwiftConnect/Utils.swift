@@ -27,15 +27,12 @@ func ??<T>(lhs: Binding<Optional<T>>, rhs: T) -> Binding<T> {
 ///   wrong, an error indicating what that was.
 ///   - output: Data captured from the tool’s `stdout`.
 
-typealias CompletionHandler = (_ result: Result<Int32, Error>, _ output: Data) -> Void
-
 extension Logger {
     private static var subsystem = Bundle.main.bundleIdentifier!
 
     /// Logs the view cycles like viewDidLoad.
     static let viewCycle = Logger(subsystem: subsystem, category: "viewcycle")
     static let vpnProcess = Logger(subsystem: subsystem, category: "vpnProcess")
-    static let openconnect = Logger(subsystem: subsystem, category: "openconnect")
 }
 
 func load_gateways_from_plist(plist_name: String) -> [Server] {

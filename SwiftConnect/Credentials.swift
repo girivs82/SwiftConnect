@@ -13,7 +13,6 @@ class Credentials: ObservableObject {
     @Published public var portal: String
     @Published public var username: String?
     @Published public var password: String?
-    @Published public var sudo_password: String?
     @Published public var bin_path: String?
     public var preauth: AuthRequestResp? = nil
     public var finalauth: AuthCompleteResp? = nil
@@ -57,21 +56,10 @@ class Credentials: ObservableObject {
         if bin_path == "" {
             bin_path = openconnect_path!
         }
-        // Also load the sudo password from the swiftconnect_sudo keychain entry
-        load_sudo_password()
-    }
-    
-    func load_sudo_password() {
-        if let data = KeychainService.shared.load(context: context, server: "swiftconnect_sudo", reason: "read your sudo password from the keychain") {
-            sudo_password = data.password
-        } else {
-            sudo_password = ""
-        }
     }
     
     func save() {
         let _ = KeychainService.shared.insertOrUpdate(credentials: CredentialsData(server: "swiftconnect", portal: portal, username: username, password: password, comment: bin_path))
-        let _ = KeychainService.shared.insertOrUpdate(credentials: CredentialsData(server: "swiftconnect_sudo", portal: "<none>", username: "<none>", password: sudo_password, comment: "<none>"))
     }
 }
 

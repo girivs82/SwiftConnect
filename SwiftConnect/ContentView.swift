@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-let windowSize = CGSize(width: 250, height: 480)
+let windowSize = CGSize(width: 250, height: 400)
 let windowInsets = EdgeInsets(top: 10, leading: 10, bottom: 10, trailing: 10)
 
 struct VisualEffect: NSViewRepresentable {
@@ -100,11 +100,6 @@ struct VPNLoginScreen: View {
                 Text("Password")
                 SecureField("Password", text: $credentials.password ?? "")
             }
-            Group {
-                Spacer().frame(height: 25)
-                Text("Superuser Password")
-                SecureField("Sudo Password", text: $credentials.sudo_password ?? "")
-            }
             Spacer().frame(height: 25)
             Toggle(isOn: $saveToKeychain) {
                 Text("Save to Keychain")
@@ -148,7 +143,7 @@ struct VPNLoginScreen: View {
             }) {
                 Text("Connect")
             }.keyboardShortcut(.defaultAction)
-                .disabled(self.credentials.portal.isEmpty || self.credentials.username!.isEmpty || self.credentials.password!.isEmpty || self.credentials.sudo_password!.isEmpty || self.credentials.bin_path!.isEmpty)
+                .disabled(self.credentials.portal.isEmpty || self.credentials.username!.isEmpty || self.credentials.password!.isEmpty || self.credentials.bin_path!.isEmpty)
         }
     }
 }

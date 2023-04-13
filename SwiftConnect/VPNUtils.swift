@@ -52,7 +52,6 @@ class VPNController: ObservableObject {
 
     private var currentLogURL: URL?;
     static var stdinPath = URL(fileURLWithPath: "\(NSTemporaryDirectory())/\(NSUUID().uuidString)");
-    static var sudo_pass: String?;
     private var authMgr: AuthManager?;
     private var authReqResp: AuthRequestResp?;
     static let shared = VPNController()
@@ -66,7 +65,6 @@ class VPNController: ObservableObject {
         if save {
             credentials.save()
         }
-        credentials.load_sudo_password()
         if credentials.samlv2 {
             if credentials.portal.hasSuffix("SAML-EXT") {
                 self.startvpn(ext_browser: true) { succ in
@@ -82,51 +80,11 @@ class VPNController: ObservableObject {
             }
         }
     }
-    
-//    public func startvpn(session_token: String? = "", server_cert_hash: String? = "", ext_browser: Bool? = false, _ onLaunch: @escaping (_ succ: Bool) -> Void) {
-//        state = .processing
-//
-//        // Prepare commands
-//        Logger.vpnProcess.info("[openconnect] start")
-//        if credentials!.samlv2 {
-//            // External browser invocation
-//            if ext_browser! {
-//                ProcessManager.shared.launch(tool: URL(fileURLWithPath: "/usr/bin/sudo"),
-//                                             arguments: ["-k", "-S", credentials!.bin_path!, "--protocol=\(proto)", credentials!.portal],
-//                                             input: Data("\(credentials!.sudo_password!)\n".utf8)) { status, output in
-//                    Logger.vpnProcess.info("[openconnect] completed")
-//                }
-//            }
-//            else {
-//                ProcessManager.shared.launch(tool: URL(fileURLWithPath: "/usr/bin/sudo"),
-//                                             arguments: ["-k", "-S", credentials!.bin_path!, "--protocol=\(proto)", "--cookie-on-stdin", "--servercert=\(server_cert_hash!)", "\(credentials!.portal)"],
-//                                             input: Data("\(credentials!.sudo_password!)\n\(session_token!)\n".utf8)) { status, output in
-//                    Logger.vpnProcess.info("[openconnect] completed")
-//                }
-//            }
-//        }
-//        else {
-//            ProcessManager.shared.launch(tool: URL(fileURLWithPath: "/usr/bin/sudo"),
-//                                         arguments: ["-k", "-S", credentials!.bin_path!, "--protocol=\(proto)", "-u", "\(credentials!.username!)", "--passwd-on-stdin", "\(credentials!.portal)"],
-//                                         input: Data("\(credentials!.sudo_password!)\n\(credentials!.password!)\n".utf8)) { status, output in
-//                    Logger.vpnProcess.info("[openconnect] completed")
-//                }
-//        }
-//        Logger.vpnProcess.info("[openconnect] launched")
-//        AppDelegate.shared.pinPopover = false
-//    }
-    
+
     public func startvpn(session_token: String? = "", server_cert_hash: String? = "", ext_browser: Bool? = false, _ onLaunch: @escaping (_ succ: Bool) -> Void) {
         state = .processing
-        
-        // Prepare commands
-        
-        Logger.vpnProcess.info("[openconnect] start")
-        //Commands.run(samlv2: credentials!.samlv2, ext_browser: ext_browser!, path: credentials!.bin_path!, session_token: session_token!, server_cert_hash: server_cert_hash!, protocol: proto.rawValue, gateway: credentials!.portal)
         DispatchQueue.global().async {
-            Commands.register()
-            Commands.status()
-            Commands.test(withMessage: "Hello World")
+            Commands.run(samlv2: self.credentials!.samlv2, ext_browser: ext_browser!, proto: self.proto.rawValue, gateway: self.credentials!.portal, path: self.credentials!.bin_path!, username: self.credentials!.username!, password: self.credentials!.password!, session_token: session_token!, server_cert_hash: server_cert_hash!)
         }
         Logger.vpnProcess.info("[openconnect] launched")
         AppDelegate.shared.pinPopover = false
@@ -168,7 +126,10 @@ class VPNController: ObservableObject {
     
     func terminate() {
         state = .processing
-        ProcessManager.shared.terminateProcess(credentials: self.credentials)
+        //ProcessManager.shared.terminateProcess(credentials: self.credentials)
+        DispatchQueue.global().async {
+            Commands.terminate()
+        }
     }
 }
 

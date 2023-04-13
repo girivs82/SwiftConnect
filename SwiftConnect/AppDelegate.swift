@@ -69,10 +69,29 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         Self.shared = self;
         // Hide app window
         NSApplication.shared.windows.first?.close()
-//        DispatchQueue.global().async {
-//            Commands.register()
-//        }
-        
+        DispatchQueue.main.async {
+            let status = Commands.status()
+            switch status {
+            case .notRegistered:
+                Commands.register()
+            case .enabled:
+                Commands.unregister()
+                Commands.register()
+            case .requiresApproval:
+                let alert = NSAlert()
+                alert.messageText = "Approve Launch Daemon Notice"
+                alert.informativeText = "Please approve the launch daemon request so that openconnect can be run via the daemon with elevated privileges. If you don't see the notification for approval, go to Settings->General->Login Items and then enable SwiftConnect. The app will quit once you hit ok. Restart the app for the chamges to take effect."
+                alert.runModal()
+                NSApp.terminate(nil)
+            case .notFound:
+                let alert = NSAlert()
+                alert.messageText = "Unknown Launch Daemon Error"
+                alert.informativeText = "The launch daemon failed unexpectedly."
+                alert.runModal()
+            @unknown default:
+                NSApp.terminate(nil)
+            }
+        }
     }
     
     func applicationDidFinishLaunching(_ aNotification: Notification) {
@@ -97,7 +116,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
     func applicationWillTerminate(_ aNotification: Notification) {
         // Insert code here to tear down your application
         DispatchQueue.main.async {
-            ProcessManager.shared.terminateProcess(credentials: Credentials.shared)
+            Commands.terminate()
+            Commands.unregister()
         }
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
             NSApp.terminate(nil)
@@ -216,7 +236,8 @@ class ContextMenu: NSObject, NSMenuDelegate {
     
     @objc func quit(_ sender: NSMenuItem) {
         DispatchQueue.main.async {
-            ProcessManager.shared.terminateProcess(credentials: Credentials.shared)
+            Commands.terminate()
+            Commands.unregister()
         }
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
             NSApp.terminate(nil)

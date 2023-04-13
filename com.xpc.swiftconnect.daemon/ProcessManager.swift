@@ -10,8 +10,10 @@ import Foundation
 import Darwin
 import os.log
 
+typealias CompletionHandler = (_ result: Result<Int32, Error>, _ output: Data) -> Void
+
 class ProcessManager {
-    private var pid: Int32 = -1
+    private let proc = Process()
     static let shared = ProcessManager()
     
     fileprivate func GetBSDProcessList() -> ([kinfo_proc]?)  {
@@ -69,18 +71,11 @@ class ProcessManager {
     }
     
     public func isProcRunning() -> Bool {
-        return self.isValidProcess(ppid: self.pid)
+        return self.proc.isRunning
     }
     
-    public func terminateProcess(credentials: Credentials?) -> Void {
-        if self.isValidProcess(ppid: self.pid) {
-            launch(tool: URL(fileURLWithPath: "/usr/bin/sudo"),
-                   arguments: ["-k", "-S", "kill", String(pid)],
-                   input: Data("\(credentials!.sudo_password!)\n".utf8)) { status, output in
-                Logger.vpnProcess.info("[openconnect] completed")
-                }
-            self.pid = -1
-        }
+    public func terminateProcess() -> Void {
+        self.proc.terminate()
     }
     
     /// Modified from: https://developer.apple.com/forums/thread/690310
@@ -109,8 +104,7 @@ class ProcessManager {
         var err = Data()
         var stdoutLines : String = ""
         var stderrLines : String = ""
-
-        let proc = Process()
+        Logger.openconnect.info("\(tool, privacy: .public), \(arguments, privacy: .public)")
         proc.executableURL = tool
         proc.arguments = arguments
         proc.standardInput = inputPipe
@@ -140,7 +134,7 @@ class ProcessManager {
             if let error = errorQ {
                 completionHandler(.failure(error), output)
             } else {
-                completionHandler(.success(proc.terminationStatus), output)
+                completionHandler(.success(self.proc.terminationStatus), output)
             }
         }
         
@@ -230,12 +224,12 @@ class ProcessManager {
                     //print("[openconnect stdout] \(line)")
                     // Identify DTLS connection
                     if line.hasPrefix("Established DTLS connection") {
-                        DispatchQueue.main.async {
-                            if AppDelegate.network_dropped != false {
-                                AppDelegate.network_dropped = false
-                                AppDelegate.shared.networkDidDrop(dropped: false)
-                            }
-                        }
+//                        DispatchQueue.main.async {
+//                            if AppDelegate.network_dropped != false {
+//                                AppDelegate.network_dropped = false
+//                                AppDelegate.shared.networkDidDrop(dropped: false)
+//                            }
+//                        }
                     }
                 }
                 //print("\(d_str)", terminator:"")
@@ -270,12 +264,12 @@ class ProcessManager {
                     //print("[openconnect stderr] \(line)")
                     // Identify DTLS handshake failure
                     if line.hasPrefix("Failed to reconnect to host") || line.hasPrefix("DTLS Dead Peer Detection detected dead peer!") || line.hasPrefix("DTLS handshake failed") {
-                        DispatchQueue.main.async {
-                            if AppDelegate.network_dropped != true {
-                                AppDelegate.network_dropped = true
-                                AppDelegate.shared.networkDidDrop(dropped: true)
-                            }
-                        }
+//                        DispatchQueue.main.async {
+//                            if AppDelegate.network_dropped != true {
+//                                AppDelegate.network_dropped = true
+//                                AppDelegate.shared.networkDidDrop(dropped: true)
+//                            }
+//                        }
                     }
                 }
                 //print("\(d_str)", terminator:"")
@@ -295,6 +289,5 @@ class ProcessManager {
             errorQ = error
             proc.terminationHandler!(proc)
         }
-        self.pid = proc.processIdentifier
     }
 }
