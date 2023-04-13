@@ -15,6 +15,8 @@ let daemonService = "com.xpc.swiftconnect.daemon.privileged_exec"
 class Commands {
     
     static var state: String = "UNTRUSTED"
+    static var listener: xpc_connection_t = xpc_null_create()
+    
     class func register() {
         DispatchQueue.global().async {
             let service = SMAppService.daemon(plistName: daemonPlist)
@@ -28,7 +30,7 @@ class Commands {
             }
         }
     }
-
+    
     class func unregister() {
         DispatchQueue.global().async {
             let service = SMAppService.daemon(plistName: daemonPlist)
@@ -42,10 +44,10 @@ class Commands {
             }
         }
     }
-
+    
     class func status() -> SMAppService.Status {
         let service = SMAppService.daemon(plistName: daemonPlist)
-
+        
         print("\(service) has status \(service.status)")
         return service.status
     }
@@ -62,25 +64,26 @@ class Commands {
         xpc_dictionary_set_string(request, "password", password)
         xpc_dictionary_set_string(request, "sessionToken", session_token)
         xpc_dictionary_set_string(request, "serverCertHash", server_cert_hash)
-
+        
         var error: xpc_rich_error_t? = nil
-        let session = xpc_session_create_mach_service(daemonService, nil, .none, &error)
+        let queue = DispatchQueue(label: "com.mikaana.SwiftConnect.privileged_exec")
+        let session = xpc_session_create_mach_service(daemonService, queue, .none, &error)
         if let error = error {
             print("Unable to create xpc_session \(error)")
             exit(1)
         }
-
+        
         let reply = xpc_session_send_message_with_reply_sync(session!, request, &error)
         if let error = error {
             print("Error sending message \(error)")
             exit(1)
         }
-
+        
         let response = xpc_dictionary_get_string(reply!, "ResponseKey")
         let encodedResponse = String(cString: response!)
-
+        
         print("Received \"\(encodedResponse)\"")
-
+        
         xpc_session_cancel(session!)
     }
     
@@ -89,23 +92,24 @@ class Commands {
         xpc_dictionary_set_string(request, "command", "disconnect")
         
         var error: xpc_rich_error_t? = nil
-        let session = xpc_session_create_mach_service(daemonService, nil, .none, &error)
+        let queue = DispatchQueue(label: "com.mikaana.SwiftConnect.privileged_exec")
+        let session = xpc_session_create_mach_service(daemonService, queue, .none, &error)
         if let error = error {
             print("Unable to create xpc_session \(error)")
             exit(1)
         }
-
+        
         let reply = xpc_session_send_message_with_reply_sync(session!, request, &error)
         if let error = error {
             print("Error sending message \(error)")
             exit(1)
         }
-
+        
         let response = xpc_dictionary_get_string(reply!, "ResponseKey")
         let encodedResponse = String(cString: response!)
-
+        
         print("Received \"\(encodedResponse)\"")
-
+        
         xpc_session_cancel(session!)
     }
     
@@ -114,24 +118,54 @@ class Commands {
         xpc_dictionary_set_string(request, "command", "is_running")
         
         var error: xpc_rich_error_t? = nil
-        let session = xpc_session_create_mach_service(daemonService, nil, .none, &error)
+        let queue = DispatchQueue(label: "com.mikaana.SwiftConnect.privileged_exec")
+        let session = xpc_session_create_mach_service(daemonService, queue, .none, &error)
         if let error = error {
             print("Unable to create xpc_session \(error)")
             exit(1)
         }
-
+        
         let reply = xpc_session_send_message_with_reply_sync(session!, request, &error)
         if let error = error {
             print("Error sending message \(error)")
             exit(1)
         }
-
+        
         let response = xpc_dictionary_get_bool(reply!, "ResponseKey")
-
+        
         print("Received \"\(response)\"")
-
+        
         xpc_session_cancel(session!)
         return response
     }
+    
+    class func create_listener() {
+        let queue = DispatchQueue(label: "com.mikaana.SwiftConnect.proc_status")
+        listener = xpc_connection_create_mach_service("com.xpc.swiftconnect.daemon.privileged_exec", queue, UInt64(XPC_CONNECTION_MACH_SERVICE_LISTENER))
+        print(listener)
+        
+        xpc_connection_set_event_handler(listener) { peer in
+            var cmd: String = ""
+            if xpc_get_type(peer) != XPC_TYPE_CONNECTION {
+                return
+            }
+            xpc_connection_set_event_handler(peer) { request in
+                if xpc_get_type(request) == XPC_TYPE_DICTIONARY {
+                    cmd = String(cString: xpc_dictionary_get_string(request, "command")!)
+                    print(cmd)
+                    if cmd == "vpn_disconnected" {
+                        print("Disconnected")
+                        
+                    }
+                    else if cmd == "vpn_reconnected" {
+                        print("Reconnected")
+                    }
+                }
+            }
+            //xpc_connection_activate(peer)
+        }
+        //xpc_connection_activate(listener)
+    }
 }
+
 

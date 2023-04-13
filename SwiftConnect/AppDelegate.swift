@@ -75,22 +75,27 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
             case .notRegistered:
                 Commands.register()
             case .enabled:
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                    Commands.register()
+                }
                 Commands.unregister()
-                Commands.register()
             case .requiresApproval:
                 let alert = NSAlert()
-                alert.messageText = "Approve Launch Daemon Notice"
-                alert.informativeText = "Please approve the launch daemon request so that openconnect can be run via the daemon with elevated privileges. If you don't see the notification for approval, go to Settings->General->Login Items and then enable SwiftConnect. The app will quit once you hit ok. Restart the app for the chamges to take effect."
+                alert.messageText = "Approve Background Launch Daemon Notice"
+                alert.informativeText = "Go to Settings->General->Login Items and then enable SwiftConnect. The app will quit once you hit ok. Restart the app for the chamges to take effect."
                 alert.runModal()
                 NSApp.terminate(nil)
             case .notFound:
+                Commands.register()
                 let alert = NSAlert()
-                alert.messageText = "Unknown Launch Daemon Error"
-                alert.informativeText = "The launch daemon failed unexpectedly."
+                alert.messageText = "Approve Background Launch Daemon Notice"
+                alert.informativeText = "Please approve the launch daemon request so that openconnect can be run via the daemon with elevated privileges. If you don't see the notification for approval, go to Settings->General->Login Items and then enable SwiftConnect. The app will quit once you hit ok. Restart the app for the chamges to take effect."
                 alert.runModal()
+                NSApp.terminate(nil)
             @unknown default:
                 NSApp.terminate(nil)
             }
+            //Commands.create_listener()
         }
     }
     

@@ -39,7 +39,8 @@ func launch(samlv2: Bool, ext_browser: Bool, openconnect_path: String, proto: St
     Logger.openconnect.info("[openconnect] launched")
 }
 
-let listener = xpc_connection_create_mach_service("com.xpc.swiftconnect.daemon.privileged_exec", nil, UInt64(XPC_CONNECTION_MACH_SERVICE_LISTENER))
+let queue = DispatchQueue(label: "com.mikaana.SwiftConnect.privileged_exec")
+let listener = xpc_connection_create_mach_service("com.xpc.swiftconnect.daemon.privileged_exec", queue, UInt64(XPC_CONNECTION_MACH_SERVICE_LISTENER))
 
 xpc_connection_set_event_handler(listener) { peer in
     var cmd: String = ""
@@ -52,7 +53,7 @@ xpc_connection_set_event_handler(listener) { peer in
     var password: String = ""
     var session_token: String = ""
     var server_cert_hash: String = ""
-    
+    //Logger.openconnect.info("\(listener.debugDescription!)")
     if xpc_get_type(peer) != XPC_TYPE_CONNECTION {
         return
     }

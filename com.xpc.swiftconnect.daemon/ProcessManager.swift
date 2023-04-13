@@ -4,71 +4,17 @@
 //
 //  Created by Shankar Giri Venkita Giri on 18/07/22.
 //
-// Added GetBSDProcessList() from https://github.com/soh335/GetBSDProcessList/blob/master/GetBSDProcessList/GetBSDProcessList.swift and modified to fix compilation errors
 
 import Foundation
 import Darwin
 import os.log
+import XPCOverlay
 
 typealias CompletionHandler = (_ result: Result<Int32, Error>, _ output: Data) -> Void
 
 class ProcessManager {
     private let proc = Process()
     static let shared = ProcessManager()
-    
-    fileprivate func GetBSDProcessList() -> ([kinfo_proc]?)  {
-
-        var done = false
-        var result: [kinfo_proc]?
-        var err: Int32
-
-        repeat {
-            let name = [CTL_KERN, KERN_PROC, KERN_PROC_ALL, 0];
-            let namePointer = name.withUnsafeBufferPointer { UnsafeMutablePointer<Int32>(mutating: $0.baseAddress) }
-            var length: Int = 0
-            
-            err = sysctl(namePointer, u_int(name.count), nil, &length, nil, 0)
-            if err == -1 {
-                err = errno
-            }
-        
-            if err == 0 {
-                let count = length / MemoryLayout<kinfo_proc>.stride
-                result =  [kinfo_proc](repeating: kinfo_proc(), count: count)
-                err = result!.withUnsafeMutableBufferPointer({ ( p: inout UnsafeMutableBufferPointer<kinfo_proc>) -> Int32 in
-                    return sysctl(namePointer, u_int(name.count), p.baseAddress, &length, nil, 0)
-                })
-                switch err {
-                case 0:
-                    done = true
-                case -1:
-                    err = errno
-                case ENOMEM:
-                    err = 0
-                default:
-                    fatalError()
-                }
-            }
-        } while err == 0 && !done
-
-        return result
-    }
-
-    // NOTE: sysctl kp_proc.p_comm char array only stores first 16 characters of process name, so remember that when searching for a process using its name
-    fileprivate func isValidProcess(ppid: Int32) -> Bool {
-        let processes = GetBSDProcessList()!
-        for process in processes {
-            if process.kp_eproc.e_ppid == ppid {
-                let name = withUnsafePointer(to: process.kp_proc.p_comm) {
-                                $0.withMemoryRebound(to: UInt8.self, capacity: MemoryLayout.size(ofValue: $0)) {
-                                    String(cString: $0)
-                                }
-                            }
-                return name == "openconnect"
-            }
-        }
-        return false
-    }
     
     public func isProcRunning() -> Bool {
         return self.proc.isRunning
@@ -223,14 +169,30 @@ class ProcessManager {
                     Logger.openconnect.info("\(line, privacy: .public)")
                     //print("[openconnect stdout] \(line)")
                     // Identify DTLS connection
-                    if line.hasPrefix("Established DTLS connection") {
-//                        DispatchQueue.main.async {
-//                            if AppDelegate.network_dropped != false {
-//                                AppDelegate.network_dropped = false
-//                                AppDelegate.shared.networkDidDrop(dropped: false)
-//                            }
+//                    if line.hasPrefix("Established DTLS connection") {
+//                        let request = xpc_dictionary_create_empty()
+//                        let queue = DispatchQueue(label: "com.mikaana.SwiftConnect.proc_status")
+//                        xpc_dictionary_set_string(request, "command", "vpn_reconnect")
+//                        var error: xpc_rich_error_t? = nil
+//                        let session = xpc_session_create_mach_service("com.xpc.swiftconnect.daemon.privileged_exec", queue, .none, &error)
+//                        if let error = error {
+//                            print("Unable to create xpc_session \(error)")
+//                            exit(1)
 //                        }
-                    }
+//                        error = xpc_session_send_message(session!, request)
+//                        if let error = error {
+//                            print("Unable to send message \(error)")
+//                            exit(1)
+//                        }
+//                        xpc_session_cancel(session!)
+//                        Logger.openconnect.info("Sending message vpn_reconnect")
+////                        DispatchQueue.main.async {
+////                            if AppDelegate.network_dropped != false {
+////                                AppDelegate.network_dropped = false
+////                                AppDelegate.shared.networkDidDrop(dropped: false)
+////                            }
+////                        }
+//                    }
                 }
                 //print("\(d_str)", terminator:"")
                 output.append(contentsOf: chunkQ ?? .empty)
