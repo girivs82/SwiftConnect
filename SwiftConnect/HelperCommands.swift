@@ -132,29 +132,49 @@ class Commands {
         return response
     }
     
-    class func create_listener() {
-        let queue = DispatchQueue(label: "com.mikaana.SwiftConnect.proc_status")
-        listener = xpc_connection_create_mach_service("com.xpc.swiftconnect.daemon.privileged_exec", queue, UInt64(XPC_CONNECTION_MACH_SERVICE_LISTENER))
-        xpc_connection_set_event_handler(listener) { peer in
-            var cmd: String = ""
-            if xpc_get_type(peer) != XPC_TYPE_CONNECTION {
-                return
+    class func schedule_conn_check() {
+        Logger.helperClient.info("Scheduling periodic check of openconnect state")
+        let activity = NSBackgroundActivityScheduler(identifier: "com.mikaana.SwiftConnect.proc_stat_check")
+        activity.repeats = true
+        activity.interval = 10
+        activity.tolerance = 0
+        activity.qualityOfService = QualityOfService.userInteractive
+        activity.schedule() { (completion: NSBackgroundActivityScheduler.CompletionHandler) in
+            let request = xpc_dictionary_create_empty()
+            xpc_dictionary_set_string(request, "command", "proc_stat")
+            
+            var error: xpc_rich_error_t? = nil
+            let queue = DispatchQueue(label: "com.mikaana.SwiftConnect.privileged_exec")
+            let session = xpc_session_create_mach_service(daemonService, queue, .none, &error)
+            if let error = error {
+                Logger.helperClient.error("Unable to create xpc_session \(error.description)")
+                exit(1)
             }
-            xpc_connection_set_event_handler(peer) { request in
-                if xpc_get_type(request) == XPC_TYPE_DICTIONARY {
-                    cmd = String(cString: xpc_dictionary_get_string(request, "command")!)
-                    if cmd == "vpn_disconnected" {
-                        Logger.helperClient.info("vpn_disconnected")
-                        
-                    }
-                    else if cmd == "vpn_reconnected" {
-                        Logger.helperClient.info("vpn_reconnected")
-                    }
+            
+            let reply = xpc_session_send_message_with_reply_sync(session!, request, &error)
+            if let error = error {
+                Logger.helperClient.error("Error sending message \(error.description)")
+                exit(1)
+            }
+            
+            let response = !xpc_dictionary_get_bool(reply!, "ResponseKey")
+            if AppDelegate.network_dropped != response {
+                DispatchQueue.main.async {
+                    AppDelegate.network_dropped = response
+                    AppDelegate.shared.networkDidDrop(dropped: response)
                 }
             }
-            //xpc_connection_activate(peer)
+            Logger.helperClient.debug("openconnect_status_bad: \"\(response)\"")
+            xpc_session_cancel(session!)
+            
+            completion(NSBackgroundActivityScheduler.Result.finished)
         }
-        //xpc_connection_activate(listener)
+    }
+    
+    class func disable_conn_check() {
+        Logger.helperClient.info("Stopping periodic check of openconnect state")
+        let activity = NSBackgroundActivityScheduler(identifier: "com.mikaana.SwiftConnect.proc_stat_check")
+        activity.invalidate()
     }
 }
 

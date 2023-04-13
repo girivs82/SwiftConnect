@@ -95,7 +95,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
             @unknown default:
                 NSApp.terminate(nil)
             }
-            //Commands.create_listener()
         }
     }
     
@@ -122,6 +121,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         // Insert code here to tear down your application
         DispatchQueue.main.async {
             Commands.terminate()
+            Commands.disable_conn_check()
             Commands.unregister()
         }
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
@@ -242,6 +242,7 @@ class ContextMenu: NSObject, NSMenuDelegate {
     @objc func quit(_ sender: NSMenuItem) {
         DispatchQueue.main.async {
             Commands.terminate()
+            Commands.disable_conn_check()
             Commands.unregister()
         }
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {

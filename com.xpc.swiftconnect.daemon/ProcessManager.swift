@@ -8,12 +8,12 @@
 import Foundation
 import Darwin
 import os.log
-import XPCOverlay
 
 typealias CompletionHandler = (_ result: Result<Int32, Error>, _ output: Data) -> Void
 
 class ProcessManager {
     private var proc: Process?
+    public var openconnect_status: Bool = false
     static let shared = ProcessManager()
     
     public func isProcRunning() -> Bool {
@@ -171,22 +171,8 @@ class ProcessManager {
                     Logger.openconnect.info("\(line, privacy: .public)")
                     // Identify DTLS connection
                     if line.hasPrefix("Established DTLS connection") {
-                        let request = xpc_dictionary_create_empty()
-                        let queue = DispatchQueue(label: "com.mikaana.SwiftConnect.proc_status")
-                        xpc_dictionary_set_string(request, "command", "vpn_reconnect")
-                        var error: xpc_rich_error_t? = nil
-                        let session = xpc_session_create_mach_service("com.xpc.swiftconnect.daemon.privileged_exec", queue, .none, &error)
-                        if let error = error {
-                            Logger.openconnect.error("Unable to create xpc_session \(error.description)")
-                            exit(1)
-                        }
-                        error = xpc_session_send_message(session!, request)
-                        if let error = error {
-                            Logger.openconnect.error("Unable to send message \(error.description)")
-                            exit(1)
-                        }
-                        xpc_session_cancel(session!)
-                        Logger.openconnect.info("Sending message vpn_reconnect")
+                        self.openconnect_status = true
+                        Logger.openconnect.info("Openconnect Connection is Good: \(self.openconnect_status)")
 ////                        DispatchQueue.main.async {
 ////                            if AppDelegate.network_dropped != false {
 ////                                AppDelegate.network_dropped = false
@@ -225,6 +211,8 @@ class ProcessManager {
                     Logger.openconnect.error("\(line, privacy: .public)")
                     // Identify DTLS handshake failure
                     if line.hasPrefix("Failed to reconnect to host") || line.hasPrefix("DTLS Dead Peer Detection detected dead peer!") || line.hasPrefix("DTLS handshake failed") {
+                        self.openconnect_status = false
+                        Logger.openconnect.info("Openconnect Connection is Good: \(self.openconnect_status)")
 //                        DispatchQueue.main.async {
 //                            if AppDelegate.network_dropped != true {
 //                                AppDelegate.network_dropped = true

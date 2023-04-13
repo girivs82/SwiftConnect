@@ -85,6 +85,12 @@ xpc_connection_set_event_handler(listener) { peer in
                 xpc_dictionary_set_bool(reply!, "ResponseKey", is_running)
                 xpc_connection_send_message(peer, reply!)
             }
+            else if cmd == "proc_stat" {
+                let proc_stat = ProcessManager.shared.openconnect_status
+                let reply = xpc_dictionary_create_reply(request)
+                xpc_dictionary_set_bool(reply!, "ResponseKey", proc_stat)
+                xpc_connection_send_message(peer, reply!)
+            }
         }
     }
     xpc_connection_activate(peer)

@@ -86,6 +86,9 @@ class VPNController: ObservableObject {
         DispatchQueue.global().async {
             Commands.run(samlv2: self.credentials!.samlv2, ext_browser: ext_browser!, proto: self.proto.rawValue, gateway: self.credentials!.portal, path: self.credentials!.bin_path!, username: self.credentials!.username!, password: self.credentials!.password!, session_token: session_token!, server_cert_hash: server_cert_hash!)
         }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 5.0) {
+            Commands.schedule_conn_check()
+        }
         Logger.vpnProcess.info("[openconnect] launched")
         AppDelegate.shared.pinPopover = false
     }
@@ -129,6 +132,7 @@ class VPNController: ObservableObject {
         //ProcessManager.shared.terminateProcess(credentials: self.credentials)
         DispatchQueue.global().async {
             Commands.terminate()
+            Commands.disable_conn_check()
         }
     }
 }
