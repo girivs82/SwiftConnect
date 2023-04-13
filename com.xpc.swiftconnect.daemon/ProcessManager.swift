@@ -13,15 +13,16 @@ import XPCOverlay
 typealias CompletionHandler = (_ result: Result<Int32, Error>, _ output: Data) -> Void
 
 class ProcessManager {
-    private let proc = Process()
+    private var proc: Process?
     static let shared = ProcessManager()
     
     public func isProcRunning() -> Bool {
-        return self.proc.isRunning
+        return ((self.proc?.isRunning) != nil)
     }
     
     public func terminateProcess() -> Void {
-        self.proc.terminate()
+        self.proc?.terminate()
+        self.proc?.waitUntilExit()
     }
     
     /// Modified from: https://developer.apple.com/forums/thread/690310
@@ -51,17 +52,18 @@ class ProcessManager {
         var stdoutLines : String = ""
         var stderrLines : String = ""
         Logger.openconnect.info("\(tool, privacy: .public), \(arguments, privacy: .public)")
-        proc.executableURL = tool
-        proc.arguments = arguments
-        proc.standardInput = inputPipe
-        proc.standardOutput = outputPipe
-        proc.standardError = errorPipe
+        self.proc = Process()
+        self.proc?.executableURL = tool
+        self.proc?.arguments = arguments
+        self.proc?.standardInput = inputPipe
+        self.proc?.standardOutput = outputPipe
+        self.proc?.standardError = errorPipe
         // Prepare an environment as close to a new macOS user account as possible
         let cleanenvvars = ["TERM_PROGRAM", "SHELL", "TERM", "TMPDIR", "Apple_PubSub_Socket_Render", "TERM_PROGRAM_VERSION", "TERM_SESSION_ID", "USER", "SSH_AUTH_SOCK", "__CF_USER_TEXT_ENCODING", "XPC_FLAGS", "XPC_SERVICE_NAME", "SHLVL", "HOME", "LOGNAME", "LC_CTYPE", "_"]
-        proc.environment = cleanenvvars.reduce(into: [String: String]()) { $0[$1] = "" }
-        proc.environment!["PATH"] = "/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+        self.proc?.environment = cleanenvvars.reduce(into: [String: String]()) { $0[$1] = "" }
+        self.proc?.environment!["PATH"] = "/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
         group.enter()
-        proc.terminationHandler = { _ in
+        self.proc?.terminationHandler = { _ in
             // This bounce to the main queue is important; read the comment near the
             // `run()` call to understand why.
             DispatchQueue.main.async {
@@ -80,7 +82,7 @@ class ProcessManager {
             if let error = errorQ {
                 completionHandler(.failure(error), output)
             } else {
-                completionHandler(.success(self.proc.terminationStatus), output)
+                completionHandler(.success(self.proc?.terminationStatus ?? -1), output)
             }
         }
         
@@ -97,7 +99,7 @@ class ProcessManager {
 
             // Actually run the process.
             
-            try proc.run()
+            try self.proc?.run()
             
             // At this point the termination handler could run and leave the group
             // before we have a chance to enter the group for each of the I/O
@@ -169,30 +171,30 @@ class ProcessManager {
                     Logger.openconnect.info("\(line, privacy: .public)")
                     //print("[openconnect stdout] \(line)")
                     // Identify DTLS connection
-//                    if line.hasPrefix("Established DTLS connection") {
-//                        let request = xpc_dictionary_create_empty()
-//                        let queue = DispatchQueue(label: "com.mikaana.SwiftConnect.proc_status")
-//                        xpc_dictionary_set_string(request, "command", "vpn_reconnect")
-//                        var error: xpc_rich_error_t? = nil
-//                        let session = xpc_session_create_mach_service("com.xpc.swiftconnect.daemon.privileged_exec", queue, .none, &error)
-//                        if let error = error {
-//                            print("Unable to create xpc_session \(error)")
-//                            exit(1)
-//                        }
-//                        error = xpc_session_send_message(session!, request)
-//                        if let error = error {
-//                            print("Unable to send message \(error)")
-//                            exit(1)
-//                        }
-//                        xpc_session_cancel(session!)
-//                        Logger.openconnect.info("Sending message vpn_reconnect")
+                    if line.hasPrefix("Established DTLS connection") {
+                        let request = xpc_dictionary_create_empty()
+                        let queue = DispatchQueue(label: "com.mikaana.SwiftConnect.proc_status")
+                        xpc_dictionary_set_string(request, "command", "vpn_reconnect")
+                        var error: xpc_rich_error_t? = nil
+                        let session = xpc_session_create_mach_service("com.xpc.swiftconnect.daemon.privileged_exec", queue, .none, &error)
+                        if let error = error {
+                            print("Unable to create xpc_session \(error)")
+                            exit(1)
+                        }
+                        error = xpc_session_send_message(session!, request)
+                        if let error = error {
+                            print("Unable to send message \(error)")
+                            exit(1)
+                        }
+                        xpc_session_cancel(session!)
+                        Logger.openconnect.info("Sending message vpn_reconnect")
 ////                        DispatchQueue.main.async {
 ////                            if AppDelegate.network_dropped != false {
 ////                                AppDelegate.network_dropped = false
 ////                                AppDelegate.shared.networkDidDrop(dropped: false)
 ////                            }
 ////                        }
-//                    }
+                    }
                 }
                 //print("\(d_str)", terminator:"")
                 output.append(contentsOf: chunkQ ?? .empty)
@@ -249,7 +251,7 @@ class ProcessManager {
             // termination handler is enough to run the notify block and call the
             // client’s completion handler.
             errorQ = error
-            proc.terminationHandler!(proc)
+            self.proc?.terminationHandler!(self.proc!)
         }
     }
 }
