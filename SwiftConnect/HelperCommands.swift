@@ -74,16 +74,12 @@ class Commands {
             exit(1)
         }
         
-        let reply = xpc_session_send_message_with_reply_sync(session!, request, &error)
+        error = xpc_session_send_message(session!, request)
         if let error = error {
             Logger.helperClient.error("Error sending message \(error.description)")
             exit(1)
         }
-        
-        let response = xpc_dictionary_get_string(reply!, "ResponseKey")
-        let encodedResponse = String(cString: response!)
-        
-        Logger.helperClient.info("Received \"\(encodedResponse)\"")
+        Logger.helperClient.info("Sent connect command")
         
         xpc_session_cancel(session!)
     }
@@ -100,16 +96,12 @@ class Commands {
             exit(1)
         }
         
-        let reply = xpc_session_send_message_with_reply_sync(session!, request, &error)
+        error = xpc_session_send_message(session!, request)
         if let error = error {
             Logger.helperClient.error("Error sending message \(error.description)")
             exit(1)
         }
-        
-        let response = xpc_dictionary_get_string(reply!, "ResponseKey")
-        let encodedResponse = String(cString: response!)
-        
-        Logger.helperClient.info("Received \"\(encodedResponse)\"")
+        Logger.helperClient.info("Sent disconnect command")
         
         xpc_session_cancel(session!)
     }

@@ -73,23 +73,11 @@ xpc_connection_set_event_handler(listener) { peer in
                 DispatchQueue.main.async {
                     launch(samlv2: samlv2, ext_browser: ext_browser, openconnect_path: openconnect_path, proto: proto, gateway: gateway, session_token: session_token, server_cert_hash: server_cert_hash, username: username, password: password)
                 }
-                let reply = xpc_dictionary_create_reply(request)
-                let response = "ACK \(cmd)"
-                response.withCString { rawResponse in
-                    xpc_dictionary_set_string(reply!, "ResponseKey", rawResponse)
-                }
-                xpc_connection_send_message(peer, reply!)
             }
             else if cmd == "disconnect" {
                 DispatchQueue.main.async {
                     ProcessManager.shared.terminateProcess()
                 }
-                let reply = xpc_dictionary_create_reply(request)
-                let response = "ACK \(cmd)"
-                response.withCString { rawResponse in
-                    xpc_dictionary_set_string(reply!, "ResponseKey", rawResponse)
-                }
-                xpc_connection_send_message(peer, reply!)
             }
             else if cmd == "is_running" {
                 let is_running = ProcessManager.shared.isProcRunning()
