@@ -173,12 +173,6 @@ class ProcessManager {
                     if line.hasPrefix("Established DTLS connection") {
                         self.openconnect_status = true
                         Logger.openconnect.info("Openconnect Connection is Good: \(self.openconnect_status)")
-////                        DispatchQueue.main.async {
-////                            if AppDelegate.network_dropped != false {
-////                                AppDelegate.network_dropped = false
-////                                AppDelegate.shared.networkDidDrop(dropped: false)
-////                            }
-////                        }
                     }
                 }
                 output.append(contentsOf: chunkQ ?? .empty)
@@ -213,12 +207,6 @@ class ProcessManager {
                     if line.hasPrefix("Failed to reconnect to host") || line.hasPrefix("DTLS Dead Peer Detection detected dead peer!") || line.hasPrefix("DTLS handshake failed") {
                         self.openconnect_status = false
                         Logger.openconnect.info("Openconnect Connection is Good: \(self.openconnect_status)")
-//                        DispatchQueue.main.async {
-//                            if AppDelegate.network_dropped != true {
-//                                AppDelegate.network_dropped = true
-//                                AppDelegate.shared.networkDidDrop(dropped: true)
-//                            }
-//                        }
                     }
                 }
                 err.append(contentsOf: chunkQ ?? .empty)
