@@ -2,7 +2,9 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<key>LSMultipleInstancesProhibited</key>
-	<true/>
+	<key>Gateway</key>
+	<string>https://placeholder.donotuse</string>
+	<key>OpenconnectPath</key>
+	<string>/path/to/openconnect/binary</string>
 </dict>
 </plist>

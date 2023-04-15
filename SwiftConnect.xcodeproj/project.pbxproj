@@ -18,6 +18,7 @@
 		32979BD62868B78000C56C63 /* WebView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32979BD52868B78000C56C63 /* WebView.swift */; };
 		329A7595288A895000F1C076 /* Credentials.swift in Sources */ = {isa = PBXBuildFile; fileRef = 329A7594288A895000F1C076 /* Credentials.swift */; };
 		32B6832F29AD28F300B02829 /* ngvpn.plist in Resources */ = {isa = PBXBuildFile; fileRef = 32B6832E29AD28F300B02829 /* ngvpn.plist */; };
+		32BB85A829EAE10C00A6ED68 /* defaults.plist in Resources */ = {isa = PBXBuildFile; fileRef = 32BB85A729EAE10C00A6ED68 /* defaults.plist */; };
 		EFC2DB1D276041FB00E051A1 /* SwiftConnectApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = EFC2DB1C276041FB00E051A1 /* SwiftConnectApp.swift */; };
 		EFC2DB1F276041FB00E051A1 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EFC2DB1E276041FB00E051A1 /* ContentView.swift */; };
 		EFC2DB21276041FC00E051A1 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = EFC2DB20276041FC00E051A1 /* Assets.xcassets */; };
@@ -74,6 +75,7 @@
 		329A7594288A895000F1C076 /* Credentials.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Credentials.swift; sourceTree = "<group>"; };
 		32B6832C29AD0BD000B02829 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		32B6832E29AD28F300B02829 /* ngvpn.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = ngvpn.plist; sourceTree = "<group>"; };
+		32BB85A729EAE10C00A6ED68 /* defaults.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = defaults.plist; sourceTree = "<group>"; };
 		EFC2DB19276041FB00E051A1 /* SwiftConnect.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SwiftConnect.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		EFC2DB1C276041FB00E051A1 /* SwiftConnectApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftConnectApp.swift; sourceTree = "<group>"; };
 		EFC2DB1E276041FB00E051A1 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -151,6 +153,7 @@
 				EFC2DB332760936600E051A1 /* SwiftConnectDebug.entitlements */,
 				EFC2DB22276041FC00E051A1 /* Preview Content */,
 				32B6832C29AD0BD000B02829 /* Info.plist */,
+				32BB85A729EAE10C00A6ED68 /* defaults.plist */,
 			);
 			path = SwiftConnect;
 			sourceTree = "<group>";
@@ -248,6 +251,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				32BB85A829EAE10C00A6ED68 /* defaults.plist in Resources */,
 				EFC2DB24276041FC00E051A1 /* Preview Assets.xcassets in Resources */,
 				32B6832F29AD28F300B02829 /* ngvpn.plist in Resources */,
 				EFC2DB21276041FC00E051A1 /* Assets.xcassets in Resources */,

@@ -26,23 +26,22 @@ class Credentials: ObservableObject {
     static let shared = Credentials()
     
     init() {
-        // Load the default gateway and openconnect binpath Info.plist
+        // Load the default gateway and openconnect binpath from defaults.plist
         var resourceFileDictionary: NSDictionary?
-        var default_gateway: String! = ""
-        var openconnect_path: String! = ""
+        var default_gateway: String?
+        var openconnect_path: String?
             
-            //Load content of Info.plist into resourceFileDictionary dictionary
-            if let path = Bundle.main.path(forResource: "Info", ofType: "plist") {
-                resourceFileDictionary = NSDictionary(contentsOfFile: path)
-            }
-            
+        //Load content of Info.plist into resourceFileDictionary dictionary
+        if let path = Bundle.main.path(forResource: "defaults", ofType: "plist") {
+            resourceFileDictionary = NSDictionary(contentsOfFile: path)
             if let resourceFileDictionaryContent = resourceFileDictionary {
-                // Get something from our Info.plist like MinimumOSVersion
-                default_gateway = resourceFileDictionaryContent.object(forKey: "DefaultGateway") as? String
+                default_gateway = resourceFileDictionaryContent.object(forKey: "Gateway") as? String
                 openconnect_path = resourceFileDictionaryContent.object(forKey: "OpenconnectPath") as? String
             }
+        }
         
-        if let data = KeychainService.shared.load(context: context, server: "swiftconnect", reason: "read your stored vpn authentication details from the keychain") {
+        if let data = KeychainService.shared.load(context: context, server: "com.swiftconnect.credentials", reason: "read your stored vpn authentication details from the keychain") {
+            print("load")
             username = data.username
             intf = data.intf
             password = data.password
@@ -50,7 +49,7 @@ class Credentials: ObservableObject {
             bin_path = data.comment
         } else {
             portal = default_gateway!
-            username = "<none>"
+            username = ""
             intf = "utun42"
             password = ""
             bin_path = openconnect_path!
@@ -59,10 +58,14 @@ class Credentials: ObservableObject {
         if bin_path == "" {
             bin_path = openconnect_path!
         }
+        // Check if the bin_path is valid, blank it out if not
+        if !FileManager.default.fileExists(atPath: bin_path!) {
+            bin_path = "Select openconnect path"
+        }
     }
     
     func save() {
-        let _ = KeychainService.shared.insertOrUpdate(credentials: CredentialsData(server: "swiftconnect", portal: portal, username: username, intf: intf, password: password, comment: bin_path))
+        let _ = KeychainService.shared.insertOrUpdate(credentials: CredentialsData(server: "com.swiftconnect.credentials", portal: portal, username: username, intf: intf, password: password, comment: bin_path))
     }
 }
 
@@ -116,6 +119,7 @@ class KeychainService: NSObject {
                 kSecValueData as String: data as Any,
                 kSecAttrDescription as String: description as Any,
                 kSecAttrComment as String: comment as Any,
+                kSecAttrPath as String: path as Any,
             ]
             let status = SecItemAdd(query as CFDictionary, nil)
             guard status == errSecSuccess else { throw KeychainError.unhandledError(status: status) }

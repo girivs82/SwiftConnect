@@ -114,7 +114,6 @@ struct VPNLoginScreen: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
             VStack {
-                HStack {
                     Button(action:
                     {
                         let panel = NSOpenPanel()
@@ -128,11 +127,7 @@ struct VPNLoginScreen: View {
                             alert.runModal()
                             credentials.bin_path = panel.url?.path ?? ""
                         }
-                    }, label: { Text("Select openconnect path").frame(maxWidth: .infinity) })
-                }.frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
-                TextField("Openconnect path", text: $credentials.bin_path ?? "")
-                    .disabled(true)
-                    .foregroundColor(colorScheme == .light ? .black : .white)
+                    }, label: { Text($credentials.bin_path.wrappedValue ?? "").frame(maxWidth: .infinity) })
             }.frame(maxWidth: .infinity, maxHeight: .infinity)
             Button(action: {
                 if canReachServer(server: self.credentials.portal) {
@@ -148,7 +143,7 @@ struct VPNLoginScreen: View {
             }) {
                 Text("Connect")
             }.keyboardShortcut(.defaultAction)
-                .disabled(self.credentials.portal.isEmpty || self.credentials.intf!.isEmpty || self.credentials.username!.isEmpty || self.credentials.password!.isEmpty || self.credentials.bin_path!.isEmpty)
+                .disabled(self.credentials.portal.isEmpty || self.credentials.intf!.isEmpty || self.credentials.username!.isEmpty || self.credentials.password!.isEmpty || self.credentials.bin_path! == "Select openconnect path")
         }
     }
 }
