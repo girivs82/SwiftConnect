@@ -14,6 +14,7 @@ class Credentials: ObservableObject {
     @Published public var username: String?
     @Published public var password: String?
     @Published public var bin_path: String?
+    @Published public var intf: String?
     public var preauth: AuthRequestResp? = nil
     public var finalauth: AuthCompleteResp? = nil
     public var samlv2: Bool = false
@@ -43,12 +44,14 @@ class Credentials: ObservableObject {
         
         if let data = KeychainService.shared.load(context: context, server: "swiftconnect", reason: "read your stored vpn authentication details from the keychain") {
             username = data.username
+            intf = data.intf
             password = data.password
             portal = data.portal!
             bin_path = data.comment
         } else {
             portal = default_gateway!
             username = "<none>"
+            intf = "utun42"
             password = ""
             bin_path = openconnect_path!
         }
@@ -59,7 +62,7 @@ class Credentials: ObservableObject {
     }
     
     func save() {
-        let _ = KeychainService.shared.insertOrUpdate(credentials: CredentialsData(server: "swiftconnect", portal: portal, username: username, password: password, comment: bin_path))
+        let _ = KeychainService.shared.insertOrUpdate(credentials: CredentialsData(server: "swiftconnect", portal: portal, username: username, intf: intf, password: password, comment: bin_path))
     }
 }
 
@@ -67,6 +70,7 @@ struct CredentialsData {
     let server: String?
     let portal: String?
     let username: String?
+    let intf: String?
     let password: String?
     let comment: String?
 }
@@ -83,14 +87,15 @@ class KeychainService: NSObject {
     func insertOrUpdate(credentials: CredentialsData) -> Bool {
         let server = credentials.server
         let username = credentials.username
+        let intf = credentials.intf
         let password = credentials.password?.data(using: String.Encoding.utf8)
         let portal = credentials.portal
         let comment = credentials.comment
-        let status = try! _insertOrUpdate(server: server, account: username, data: password, description: portal, comment: comment)
+        let status = try! _insertOrUpdate(server: server, account: username, path: intf, data: password, description: portal, comment: comment)
         return status
     }
     
-    private func _insertOrUpdate(server: String?, account: String?, data: Data?, description: String?, comment: String?) throws -> Bool {
+    private func _insertOrUpdate(server: String?, account: String?, path: String?, data: Data?, description: String?, comment: String?) throws -> Bool {
         let query: [String: Any] = [
             kSecClass as String: kSecClassInternetPassword,
             kSecAttrServer as String: server as Any,
@@ -100,6 +105,7 @@ class KeychainService: NSObject {
             kSecValueData as String: data as Any,
             kSecAttrDescription as String: description as Any,
             kSecAttrComment as String: comment as Any,
+            kSecAttrPath as String: path as Any,
         ]
         let status = SecItemUpdate(query as CFDictionary, attributes as CFDictionary)
         if status == errSecItemNotFound {
@@ -159,12 +165,13 @@ class KeychainService: NSObject {
             let passwordData = existingItem[kSecValueData as String] as? Data,
             let password = String(data: passwordData, encoding: String.Encoding.utf8),
             let username = existingItem[kSecAttrAccount as String] as? String,
+            let intf = existingItem[kSecAttrPath as String] as? String,
             let portal = existingItem[kSecAttrDescription as String] as? String,
             let comment = existingItem[kSecAttrComment as String] as? String
         else {
             return nil
         }
         
-        return CredentialsData(server: server, portal: portal, username: username, password: password, comment: comment)
+        return CredentialsData(server: server, portal: portal, username: username, intf: intf, password: password, comment: comment)
     }
 }

@@ -60,11 +60,9 @@ class VPNController: ObservableObject {
         self.credentials = credentials
     }
 
-    func start(credentials: Credentials, save: Bool) {
+    func start(credentials: Credentials) {
         self.credentials = credentials
-        if save {
-            credentials.save()
-        }
+        credentials.save()
         if credentials.samlv2 {
             if credentials.portal.hasSuffix("SAML-EXT") {
                 self.startvpn(ext_browser: true) { succ in
@@ -84,7 +82,7 @@ class VPNController: ObservableObject {
     public func startvpn(session_token: String? = "", server_cert_hash: String? = "", ext_browser: Bool? = false, _ onLaunch: @escaping (_ succ: Bool) -> Void) {
         state = .processing
         DispatchQueue.global().async {
-            Commands.run(samlv2: self.credentials!.samlv2, ext_browser: ext_browser!, proto: self.proto.rawValue, gateway: self.credentials!.portal, path: self.credentials!.bin_path!, username: self.credentials!.username!, password: self.credentials!.password!, session_token: session_token!, server_cert_hash: server_cert_hash!)
+            Commands.run(samlv2: self.credentials!.samlv2, ext_browser: ext_browser!, proto: self.proto.rawValue, gateway: self.credentials!.portal, intf: self.credentials!.intf!, path: self.credentials!.bin_path!, username: self.credentials!.username!, password: self.credentials!.password!, session_token: session_token!, server_cert_hash: server_cert_hash!)
         }
         DispatchQueue.main.asyncAfter(deadline: .now() + 5.0) {
             Commands.schedule_conn_check()

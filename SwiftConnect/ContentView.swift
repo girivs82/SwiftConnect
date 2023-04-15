@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-let windowSize = CGSize(width: 250, height: 400)
+let windowSize = CGSize(width: 250, height: 250)
 let windowInsets = EdgeInsets(top: 10, leading: 10, bottom: 10, trailing: 10)
 
 struct VisualEffect: NSViewRepresentable {
@@ -74,7 +74,6 @@ struct VPNLoginScreen: View {
     @EnvironmentObject var credentials: Credentials
     @EnvironmentObject var network: NetworkPathMonitor
     @Environment(\.colorScheme) var colorScheme
-    @State private var saveToKeychain = true
     @State private var useSAMLv2 = true
     @State var openconnectPath = "Openconnect Binary Path"
     @State var showFileChooser = false
@@ -92,47 +91,53 @@ struct VPNLoginScreen: View {
                         Text($0.serverName)
                     }
                 }
+                HStack {
+                    Text("VPN Interface")
+                    TextField("Interface", text: $credentials.intf ?? "")
+                }
             }
             Group {
-                Spacer().frame(height: 25)
-                Text("Username")
-                TextField("Username", text: $credentials.username ?? "")
-                Text("Password")
-                SecureField("Password", text: $credentials.password ?? "")
+                HStack {
+                    Text("Username")
+                    TextField("Username", text: $credentials.username ?? "")
+                }
+                HStack {
+                    Text("Password")
+                    SecureField("Password", text: $credentials.password ?? "")
+                }
             }
-            Spacer().frame(height: 25)
-            Toggle(isOn: $saveToKeychain) {
-                Text("Save to Keychain")
-            }.toggleStyle(CheckboxToggleStyle())
-            Toggle(isOn: $useSAMLv2) {
-                Text("SAMLv2")
-            }.toggleStyle(CheckboxToggleStyle())
-            Spacer().frame(height: 25)
+            Group {
+                Toggle(isOn: $useSAMLv2) {
+                    Text("SAMLv2")
+                }
+                .toggleStyle(CheckboxToggleStyle())
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
             VStack {
-                Text("Openconnect Bin Path")
+                HStack {
+                    Button(action:
+                    {
+                        let panel = NSOpenPanel()
+                        panel.resolvesAliases = false
+                        panel.allowsMultipleSelection = false
+                        panel.canChooseDirectories = false
+                        if panel.runModal() == .OK {
+                            let alert = NSAlert()
+                            alert.messageText = "Trusted Binary Notice"
+                            alert.informativeText = "Please ensure that the binary selected is trusted. It will be run with elevated privileges."
+                            alert.runModal()
+                            credentials.bin_path = panel.url?.path ?? ""
+                        }
+                    }, label: { Text("Select openconnect path").frame(maxWidth: .infinity) })
+                }.frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
                 TextField("Openconnect path", text: $credentials.bin_path ?? "")
                     .disabled(true)
                     .foregroundColor(colorScheme == .light ? .black : .white)
-                Button("Select")
-                {
-                    let panel = NSOpenPanel()
-                    panel.resolvesAliases = false
-                    panel.allowsMultipleSelection = false
-                    panel.canChooseDirectories = false
-                    if panel.runModal() == .OK {
-                        let alert = NSAlert()
-                        alert.messageText = "Trusted Binary Notice"
-                        alert.informativeText = "Please ensure that the binary selected is trusted. It will be run with elevated privileges."
-                        alert.runModal()
-                        credentials.bin_path = panel.url?.path ?? ""
-                    }
-                }
             }.frame(maxWidth: .infinity, maxHeight: .infinity)
-            Spacer().frame(height: 25)
             Button(action: {
                 if canReachServer(server: self.credentials.portal) {
                     self.credentials.samlv2 = self.useSAMLv2
-                    vpn.start(credentials: credentials, save: saveToKeychain)
+                    vpn.start(credentials: credentials)
                 }
                 else {
                     let alert = NSAlert()
@@ -143,7 +148,7 @@ struct VPNLoginScreen: View {
             }) {
                 Text("Connect")
             }.keyboardShortcut(.defaultAction)
-                .disabled(self.credentials.portal.isEmpty || self.credentials.username!.isEmpty || self.credentials.password!.isEmpty || self.credentials.bin_path!.isEmpty)
+                .disabled(self.credentials.portal.isEmpty || self.credentials.intf!.isEmpty || self.credentials.username!.isEmpty || self.credentials.password!.isEmpty || self.credentials.bin_path!.isEmpty)
         }
     }
 }

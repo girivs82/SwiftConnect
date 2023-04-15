@@ -53,13 +53,14 @@ class Commands {
         return service.status
     }
     
-    class func run(samlv2: Bool, ext_browser: Bool, proto: String, gateway: String, path: String,  username: String, password: String, session_token: String, server_cert_hash: String) {
+    class func run(samlv2: Bool, ext_browser: Bool, proto: String, gateway: String, intf: String, path: String,  username: String, password: String, session_token: String, server_cert_hash: String) {
         let request = xpc_dictionary_create_empty()
         xpc_dictionary_set_string(request, "command", "connect")
         xpc_dictionary_set_bool(request, "useSAMLv2", samlv2)
         xpc_dictionary_set_bool(request, "extBrowser", ext_browser)
         xpc_dictionary_set_string(request, "protocol", proto)
         xpc_dictionary_set_string(request, "vpnGateway", gateway)
+        xpc_dictionary_set_string(request, "vpnInterface", intf)
         xpc_dictionary_set_string(request, "openconnectPath", path)
         xpc_dictionary_set_string(request, "username", username)
         xpc_dictionary_set_string(request, "password", password)
