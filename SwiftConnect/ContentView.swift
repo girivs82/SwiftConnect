@@ -22,23 +22,40 @@ struct VisualEffect: NSViewRepresentable {
     func updateNSView(_ nsView: NSView, context: Context) { }
 }
 
-struct VPNLogScreen: View {
+struct VPNApprovalScreen: View {
     @EnvironmentObject var vpn: VPNController
-    @State private var logtext: String = ""
+    @EnvironmentObject var settings_help_message: SettingsHelpMessage
     
     var body: some View {
         VStack {
-            TextEditor(text: $logtext)
+            Text("Approve Background Launch Daemon Notice")
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .lineLimit(100)
             Spacer().frame(height: 25)
-            Button(action: {
-                readLogEntries(category: "openconnect") { result in
-                logtext = result
-                }
-            }) { Text("Show Logs").frame(maxHeight: 25) }
+            Text($settings_help_message.helpMessage.wrappedValue)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .lineLimit(100)
             Spacer().frame(height: 25)
-            Button(action: { vpn.state = .launched  }) { Text("Back").frame(maxHeight: 25) }
+            Button(action:
+            {
+                AppDelegate.shared.setAppServiceState()
+            }) { Text("Dismiss").frame(maxHeight: 25) }
+        }
+    }
+}
+
+struct VPNStuckScreen: View {
+    @EnvironmentObject var settings_help_message: SettingsHelpMessage
+    
+    var body: some View {
+        VStack {
+            Text("Openconnect Bad State Notice")
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .lineLimit(100)
+            Spacer().frame(height: 25)
+            Text($settings_help_message.helpMessage.wrappedValue)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .lineLimit(100)
         }
     }
 }
@@ -48,7 +65,6 @@ struct VPNLaunchedScreen: View {
     @EnvironmentObject var vpn: VPNController
     
     var body: some View {
-        ZStack {
             VStack {
                 Image("Connected")
                     .resizable()
@@ -58,13 +74,6 @@ struct VPNLaunchedScreen: View {
                 Button(action: { vpn.terminate() }) {
                     Text("Disconnect")
                 }.keyboardShortcut(.defaultAction)
-        }
-            Button(action: { vpn.state = .viewlogs }) {
-            Text("logs").underline()
-                .foregroundColor(Color.gray)
-                .fixedSize(horizontal: false, vertical: true)
-        }.buttonStyle(PlainButtonStyle())
-                .position(x: 155, y: 190)
         }
     }
 }
@@ -132,7 +141,7 @@ struct VPNLoginScreen: View {
             Button(action: {
                 if canReachServer(server: self.credentials.portal) {
                     self.credentials.samlv2 = self.useSAMLv2
-                    vpn.start(credentials: credentials)
+                    vpn.start()
                 }
                 else {
                     let alert = NSAlert()
@@ -184,7 +193,6 @@ struct VPNWebAuthScreen: View {
             AuthWebView(viewModel: model)
         }
             .padding(5.0)
-
     }
 }
 
@@ -197,27 +205,26 @@ struct VPNWebAuthScreen_Previews: PreviewProvider {
 
 
 struct ContentView: View {
-    @StateObject var credentials : Credentials = AppDelegate.shared.credentials!
-    @StateObject var vpn : VPNController = VPNController.shared
-    
-    init(forceState: VPNState? = nil) {
-        _credentials = StateObject(wrappedValue: Credentials())
-    }
+    @EnvironmentObject var credentials : Credentials
+    @EnvironmentObject var vpn: VPNController
+    @EnvironmentObject var settings_help_message: SettingsHelpMessage
     
     var body: some View {
         VStack {
             switch (vpn.state) {
+            case .approval: VPNApprovalScreen().frame(width: windowSize.width, height: windowSize.height)
             case .stopped: VPNLoginScreen().frame(width: windowSize.width, height: windowSize.height)
             case .webauth: VPNWebAuthScreen(mesgURL: URL(string: self.credentials.preauth!.login_url!)!).frame(width: 480, height: 650)
             case .processing: ProgressView().frame(width: windowSize.width, height: windowSize.height)
             case .launched: VPNLaunchedScreen().frame(width: windowSize.width, height: windowSize.height)
-            case .viewlogs: VPNLogScreen().frame(width: 480, height: 650)
+            case .stuck: VPNStuckScreen().frame(width: windowSize.width, height: windowSize.height)
             }
         }
         .padding(windowInsets)
         .background(VisualEffect())
         .environmentObject(credentials)
         .environmentObject(vpn)
+        .environmentObject(settings_help_message)
     }
     
     static let inPreview: Bool = ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] == "1";
@@ -225,7 +232,7 @@ struct ContentView: View {
 
 struct ProgressView_Previews: PreviewProvider {
     static var previews: some View {
-        ContentView(forceState: VPNState.processing)
+        ContentView()
     }
 }
 

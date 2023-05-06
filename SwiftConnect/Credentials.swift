@@ -40,8 +40,11 @@ class Credentials: ObservableObject {
             }
         }
         
+        //Set context parameters
+        context.touchIDAuthenticationAllowableReuseDuration = 300
+        
+        // Load credentials from keychain
         if let data = KeychainService.shared.load(context: context, server: "com.swiftconnect.credentials", reason: "read your stored vpn authentication details from the keychain") {
-            print("load")
             username = data.username
             intf = data.intf
             password = data.password

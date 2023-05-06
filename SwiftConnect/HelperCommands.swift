@@ -27,7 +27,6 @@ class Commands {
                 Logger.helperClient.info("Successfully registered \(service)")
             } catch {
                 Logger.helperClient.error("Unable to register \(error)")
-                exit(1)
             }
         }
     }
@@ -41,7 +40,6 @@ class Commands {
                 Logger.helperClient.info("Successfully unregistered \(service)")
             } catch {
                 Logger.helperClient.error("Unable to unregister \(error)")
-                exit(1)
             }
         }
     }
@@ -51,6 +49,10 @@ class Commands {
         
         Logger.helperClient.info("\(service) has status \(service.status.rawValue)")
         return service.status
+    }
+    
+    class func settings() {
+        SMAppService.openSystemSettingsLoginItems()
     }
     
     class func run(samlv2: Bool, ext_browser: Bool, proto: String, gateway: String, intf: String, path: String,  username: String, password: String, session_token: String, server_cert_hash: String) {
@@ -126,6 +128,32 @@ class Commands {
         }
         
         let response = xpc_dictionary_get_bool(reply!, "ResponseKey")
+        
+        Logger.helperClient.info("Received \"\(response)\"")
+        
+        xpc_session_cancel(session!)
+        return response
+    }
+    
+    class func get_pid() -> Int64 {
+        let request = xpc_dictionary_create_empty()
+        xpc_dictionary_set_string(request, "command", "proc_pid")
+        
+        var error: xpc_rich_error_t? = nil
+        let queue = DispatchQueue(label: "com.mikaana.SwiftConnect.privileged_exec")
+        let session = xpc_session_create_mach_service(daemonService, queue, .none, &error)
+        if let error = error {
+            Logger.helperClient.error("Unable to create xpc_session \(error.description)")
+            exit(1)
+        }
+        
+        let reply = xpc_session_send_message_with_reply_sync(session!, request, &error)
+        if let error = error {
+            Logger.helperClient.error("Error sending message \(error.description)")
+            exit(1)
+        }
+        
+        let response = xpc_dictionary_get_int64(reply!, "ResponseKey")
         
         Logger.helperClient.info("Received \"\(response)\"")
         

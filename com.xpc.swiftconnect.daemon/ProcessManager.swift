@@ -13,16 +13,28 @@ typealias CompletionHandler = (_ result: Result<Int32, Error>, _ output: Data) -
 
 class ProcessManager {
     private var proc: Process?
+    private var pid: Int64?
     public var openconnect_status: Bool = false
     static let shared = ProcessManager()
     
     public func isProcRunning() -> Bool {
-        return ((self.proc?.isRunning) != nil)
+        return (self.proc?.isRunning)!
+    }
+    
+    public func getPID() -> Int64? {
+        return self.pid
     }
     
     public func terminateProcess() -> Void {
         self.proc?.terminate()
         self.proc?.waitUntilExit()
+        let status = self.proc?.terminationStatus
+         
+        if status == 0 {
+            Logger.openconnect.info("Successful completion of openconnect process.")
+        } else {
+            Logger.openconnect.error("Openconnect process did not terminate properly.")
+        }
     }
     
     /// Modified from: https://developer.apple.com/forums/thread/690310
@@ -52,6 +64,7 @@ class ProcessManager {
         var stdoutLines : String = ""
         var stderrLines : String = ""
         Logger.openconnect.info("\(tool, privacy: .public), \(arguments, privacy: .public)")
+        self.pid = nil
         self.proc = Process()
         self.proc?.executableURL = tool
         self.proc?.arguments = arguments
@@ -100,6 +113,8 @@ class ProcessManager {
             // Actually run the process.
             
             try self.proc?.run()
+            // Record the pid
+            self.pid = Int64(exactly: (self.proc?.processIdentifier)!)
             
             // At this point the termination handler could run and leave the group
             // before we have a chance to enter the group for each of the I/O

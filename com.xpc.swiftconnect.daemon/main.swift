@@ -93,6 +93,13 @@ xpc_connection_set_event_handler(listener) { peer in
                 xpc_dictionary_set_bool(reply!, "ResponseKey", proc_stat)
                 xpc_connection_send_message(peer, reply!)
             }
+            else if cmd == "proc_pid" {
+                let proc_pid = ProcessManager.shared.getPID()
+                let pid = (proc_pid == nil) ? -1 : proc_pid
+                let reply = xpc_dictionary_create_reply(request)
+                xpc_dictionary_set_int64(reply!, "ResponseKey", pid!)
+                xpc_connection_send_message(peer, reply!)
+            }
         }
     }
     xpc_connection_activate(peer)

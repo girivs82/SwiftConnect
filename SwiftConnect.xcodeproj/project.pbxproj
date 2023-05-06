@@ -13,6 +13,7 @@
 		3205393C29E68C80000521F5 /* com.xpc.swiftconnect.daemon in Embed Agent */ = {isa = PBXBuildFile; fileRef = 3202211529E2863500588571 /* com.xpc.swiftconnect.daemon */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		32567B17286C12190099C11A /* Network.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32567B16286C12190099C11A /* Network.swift */; };
 		32567B19286D742B0099C11A /* Utils.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32567B18286D742B0099C11A /* Utils.swift */; };
+		326142842A068C6C00B855CF /* SettingsHelpMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 326142832A068C6C00B855CF /* SettingsHelpMessage.swift */; };
 		3272F74D2867278400223D4F /* AuthManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3272F74C2867278400223D4F /* AuthManager.swift */; };
 		3282710629E5A9FF0076137D /* ProcessManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 327D51E9288521D70009AD1C /* ProcessManager.swift */; };
 		32979BD62868B78000C56C63 /* WebView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32979BD52868B78000C56C63 /* WebView.swift */; };
@@ -68,6 +69,7 @@
 		3202211D29E2887400588571 /* HelperCommands.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HelperCommands.swift; sourceTree = "<group>"; };
 		32567B16286C12190099C11A /* Network.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Network.swift; sourceTree = "<group>"; };
 		32567B18286D742B0099C11A /* Utils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Utils.swift; sourceTree = "<group>"; };
+		326142832A068C6C00B855CF /* SettingsHelpMessage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsHelpMessage.swift; sourceTree = "<group>"; };
 		3269CBC329E5490E006018DF /* com.xpc.swiftconnect.daemon.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = com.xpc.swiftconnect.daemon.entitlements; sourceTree = "<group>"; };
 		3272F74C2867278400223D4F /* AuthManager.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AuthManager.swift; sourceTree = "<group>"; };
 		327D51E9288521D70009AD1C /* ProcessManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProcessManager.swift; sourceTree = "<group>"; };
@@ -137,6 +139,7 @@
 		EFC2DB1B276041FB00E051A1 /* SwiftConnect */ = {
 			isa = PBXGroup;
 			children = (
+				326142832A068C6C00B855CF /* SettingsHelpMessage.swift */,
 				32B6832E29AD28F300B02829 /* ngvpn.plist */,
 				329A7594288A895000F1C076 /* Credentials.swift */,
 				32567B18286D742B0099C11A /* Utils.swift */,
@@ -277,6 +280,7 @@
 				EFC2DB352760939300E051A1 /* AppDelegate.swift in Sources */,
 				329A7595288A895000F1C076 /* Credentials.swift in Sources */,
 				EFC2DB1F276041FB00E051A1 /* ContentView.swift in Sources */,
+				326142842A068C6C00B855CF /* SettingsHelpMessage.swift in Sources */,
 				EFC2DB1D276041FB00E051A1 /* SwiftConnectApp.swift in Sources */,
 				32979BD62868B78000C56C63 /* WebView.swift in Sources */,
 				3202211E29E2887400588571 /* HelperCommands.swift in Sources */,

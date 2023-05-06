@@ -10,11 +10,13 @@ import SwiftUI
 import UserNotifications
 import os.log
 
-
 class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
     static var shared: AppDelegate!;
     static var network_dropped: Bool = false
-    var credentials: Credentials?
+    static var network_monitor = NetworkPathMonitor.shared
+    private var credentials: Credentials = Credentials()
+    private var vpn: VPNController = VPNController()
+    private var settings_help_message: SettingsHelpMessage = SettingsHelpMessage()
     var serverlist = [Server]()
     
     var pinPopover = false
@@ -31,7 +33,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
     }()
     private lazy var popover: NSPopover = {
         let popover = NSPopover()
-        let contentView = ContentView()
+        let contentView = ContentView().environmentObject(credentials).environmentObject(vpn).environmentObject(settings_help_message)
         popover.contentSize = NSSize(width: 200, height: 200)
         popover.contentViewController = NSHostingController(rootView: contentView)
         popover.behavior = .transient
@@ -51,6 +53,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
     func vpnConnectionDidChange(connected: Bool) {
         statusItem.button?.image = (connected) ? icon_connected : icon
         statusItem.button?.image?.isTemplate = !connected || AppDelegate.network_dropped
+        vpn.state = connected ? .launched : .stopped
         //popover.contentViewController.
         //generateNotification(sound: "NO", title: (connected) ? "VPN Connected" : "VPN Disconnected", body: (connected) ? "VPN is now connected." : "VPN is now disconnected.")
     }
@@ -69,33 +72,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         Self.shared = self;
         // Hide app window
         NSApplication.shared.windows.first?.close()
-        DispatchQueue.main.async {
-            let status = Commands.status()
-            switch status {
-            case .notRegistered:
-                Commands.register()
-            case .enabled:
-                DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-                    Commands.register()
-                }
-                Commands.unregister()
-            case .requiresApproval:
-                let alert = NSAlert()
-                alert.messageText = "Approve Background Launch Daemon Notice"
-                alert.informativeText = "Go to Settings->General->Login Items and then enable SwiftConnect. The app will quit once you hit ok. Restart the app for the chamges to take effect."
-                alert.runModal()
-                NSApp.terminate(nil)
-            case .notFound:
-                Commands.register()
-                let alert = NSAlert()
-                alert.messageText = "Approve Background Launch Daemon Notice"
-                alert.informativeText = "Please approve the launch daemon request so that openconnect can be run via the daemon with elevated privileges. If you don't see the notification for approval, go to Settings->General->Login Items and then enable SwiftConnect. The app will quit once you hit ok. Restart the app for the chamges to take effect."
-                alert.runModal()
-                NSApp.terminate(nil)
-            @unknown default:
-                NSApp.terminate(nil)
-            }
-        }
+        setAppServiceState()
     }
     
     func applicationDidFinishLaunching(_ aNotification: Notification) {
@@ -109,10 +86,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
             window.close()
         }
         self.serverlist = load_gateways_from_plist(plist_name: "ngvpn")
-        // Just initialize the shared objects for vpncontroller, processmanager and networkpathmonitor here for them to run early
-        self.credentials = Credentials.shared
-        VPNController.shared.initialize(credentials: self.credentials)
-        _ = NetworkPathMonitor.shared
+        // Just initialize the vpncontroller, so that credentials can be passed to it as early as possible
+        vpn.initialize(credentials: credentials)
         // Initialize statusItem
         statusItem.button!.target = self
     }
@@ -157,45 +132,73 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         popover.performClose(self)
     }
     
-    func testPrivilege() -> Bool {
-        return getuid() == 0;
+    func setAppServiceState() {
+        DispatchQueue.main.async {
+            let status = Commands.status()
+            switch status {
+            case .notRegistered:
+                self.settings_help_message.helpMessage = "Please wait a second..."
+                Commands.unregister()
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                    self.settings_help_message.helpMessage = ""
+                    Commands.register()
+                    self.vpn.state = .stopped
+                }
+            case .enabled:
+                self.settings_help_message.helpMessage = "Please wait a second..."
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                    self.settings_help_message.helpMessage = ""
+                    Commands.register()
+                    self.vpn.state = .stopped
+                }
+                Commands.unregister()
+            case .requiresApproval:
+                self.settings_help_message.helpMessage = "Enable SwiftConnect in Settings->General->Login Items in System Settings which has been opened for you."
+                Commands.settings()
+            case .notFound:
+                Commands.register()
+                self.settings_help_message.helpMessage = "Please approve the launch daemon request so that openconnect can be run via the daemon with elevated privileges in System Settings. Check your notification area."
+            @unknown default:
+                break
+            }
+        }
+    }
+    
+    func vpnBadState() {
+        DispatchQueue.main.async {
+            self.settings_help_message.helpMessage = "Openconnect process is in a bad state and refuses to die. Please quit SwiftConnect and then try to kill the openconnect process yourself."
+        }
     }
     
     func generateNotification (sound:String, title:String , body:String) {
-        if #available(OSX 10.14, *) {
-            UNUserNotificationCenter.current().delegate = NotificationCenterDelegate.shared // must have delegate, otherwise notification won't appear
-            UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { granted, error in
-                guard granted else { return }
-                let notificationCenter = UNUserNotificationCenter.current()
-                notificationCenter.getNotificationSettings
-                   { (settings) in
-                    if settings.authorizationStatus == .authorized {
-                        // build the banner
-                        let content = UNMutableNotificationContent();
-                        content.title = title
-                        content.body = body
-                        if sound == "YES" {content.sound =  UNNotificationSound.default};
-                        // define when banner will appear - this is set to 1 seconds - note you cannot set this to zero
-                        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 1, repeats: false);
-                        // Create the request
-                        let uuidString = UUID().uuidString ;
-                        let request = UNNotificationRequest(identifier: uuidString, content: content, trigger: trigger);
-                        // Schedule the request with the system.
-                        notificationCenter.add(request, withCompletionHandler:
-                            { (error) in
-                            if error != nil
-                                {
-                                    // Something went wrong
-                                    Logger.viewCycle.error("Something went wrong while adding notifications!")
-                                }
-                            })
-                    }
+        UNUserNotificationCenter.current().delegate = NotificationCenterDelegate.shared // must have delegate, otherwise notification won't appear
+        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { granted, error in
+            guard granted else { return }
+            let notificationCenter = UNUserNotificationCenter.current()
+            notificationCenter.getNotificationSettings
+               { (settings) in
+                if settings.authorizationStatus == .authorized {
+                    // build the banner
+                    let content = UNMutableNotificationContent();
+                    content.title = title
+                    content.body = body
+                    if sound == "YES" {content.sound =  UNNotificationSound.default};
+                    // define when banner will appear - this is set to 1 seconds - note you cannot set this to zero
+                    let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 1, repeats: false);
+                    // Create the request
+                    let uuidString = UUID().uuidString ;
+                    let request = UNNotificationRequest(identifier: uuidString, content: content, trigger: trigger);
+                    // Schedule the request with the system.
+                    notificationCenter.add(request, withCompletionHandler:
+                        { (error) in
+                        if error != nil
+                            {
+                                // Something went wrong
+                                Logger.viewCycle.error("Something went wrong while adding notifications!")
+                            }
+                        })
                 }
             }
-            
-        } else {
-            // Fallback on earlier versions
-            Logger.viewCycle.error("Notifications not implemented for macOS < 10.14")
         }
     }
 }
