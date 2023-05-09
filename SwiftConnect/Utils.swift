@@ -58,7 +58,8 @@ func load_gateways_from_plist(plist_name: String) -> [Server] {
             serverlist.append(server)
         }
     }
-    return serverlist
+    let sortedServerList = serverlist.sorted( by: { $0.id < $1.id })
+    return sortedServerList
 }
 
 private var urlSession:URLSession = {

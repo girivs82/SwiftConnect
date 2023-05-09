@@ -19,9 +19,9 @@ class Commands {
     static var listener: xpc_connection_t = xpc_null_create()
     
     class func register() {
-        DispatchQueue.global().async {
-            let service = SMAppService.daemon(plistName: daemonPlist)
-            
+        let service = SMAppService.daemon(plistName: daemonPlist)
+        let queue = DispatchQueue(label: "com.mikaana.swiftconnect.statusQ")
+        queue.async {
             do {
                 try service.register()
                 Logger.helperClient.info("Successfully registered \(service)")
@@ -32,9 +32,9 @@ class Commands {
     }
     
     class func unregister() {
-        DispatchQueue.global().async {
-            let service = SMAppService.daemon(plistName: daemonPlist)
-            
+        let service = SMAppService.daemon(plistName: daemonPlist)
+        let queue = DispatchQueue(label: "com.mikaana.swiftconnect.statusQ")
+        queue.async {
             do {
                 try service.unregister()
                 Logger.helperClient.info("Successfully unregistered \(service)")
@@ -49,6 +49,17 @@ class Commands {
         
         Logger.helperClient.info("\(service) has status \(service.status.rawValue)")
         return service.status
+    }
+    
+    class func status_change_check() {
+        Logger.helperClient.info("Scheduling periodic check of launchdaemon status")
+        Timer.scheduledTimer(withTimeInterval: 2.0, repeats: true) { timer in
+            let status = AppDelegate.shared.setAppServiceState()
+            if status == .enabled {
+                timer.invalidate()
+                Logger.helperClient.info("Stopping periodic check of launchdaemon status")
+            }
+        }
     }
     
     class func settings() {
@@ -70,7 +81,7 @@ class Commands {
         xpc_dictionary_set_string(request, "serverCertHash", server_cert_hash)
         
         var error: xpc_rich_error_t? = nil
-        let queue = DispatchQueue(label: "com.mikaana.SwiftConnect.privileged_exec")
+        let queue = DispatchQueue(label: "com.mikaana.swiftconnect.privileged_exec")
         let session = xpc_session_create_mach_service(daemonService, queue, .none, &error)
         if let error = error {
             Logger.helperClient.error("Unable to create xpc_session \(error.description)")
@@ -92,7 +103,7 @@ class Commands {
         xpc_dictionary_set_string(request, "command", "disconnect")
         
         var error: xpc_rich_error_t? = nil
-        let queue = DispatchQueue(label: "com.mikaana.SwiftConnect.privileged_exec")
+        let queue = DispatchQueue(label: "com.mikaana.swiftconnect.privileged_exec")
         let session = xpc_session_create_mach_service(daemonService, queue, .none, &error)
         if let error = error {
             Logger.helperClient.error("Unable to create xpc_session \(error.description)")
@@ -114,7 +125,7 @@ class Commands {
         xpc_dictionary_set_string(request, "command", "is_running")
         
         var error: xpc_rich_error_t? = nil
-        let queue = DispatchQueue(label: "com.mikaana.SwiftConnect.privileged_exec")
+        let queue = DispatchQueue(label: "com.mikaana.swiftconnect.privileged_exec")
         let session = xpc_session_create_mach_service(daemonService, queue, .none, &error)
         if let error = error {
             Logger.helperClient.error("Unable to create xpc_session \(error.description)")
@@ -140,7 +151,7 @@ class Commands {
         xpc_dictionary_set_string(request, "command", "proc_pid")
         
         var error: xpc_rich_error_t? = nil
-        let queue = DispatchQueue(label: "com.mikaana.SwiftConnect.privileged_exec")
+        let queue = DispatchQueue(label: "com.mikaana.swiftconnect.privileged_exec")
         let session = xpc_session_create_mach_service(daemonService, queue, .none, &error)
         if let error = error {
             Logger.helperClient.error("Unable to create xpc_session \(error.description)")
@@ -163,7 +174,7 @@ class Commands {
     
     class func schedule_conn_check() {
         Logger.helperClient.info("Scheduling periodic check of openconnect state")
-        let activity = NSBackgroundActivityScheduler(identifier: "com.mikaana.SwiftConnect.proc_stat_check")
+        let activity = NSBackgroundActivityScheduler(identifier: "com.mikaana.swiftconnect.proc_stat_check")
         activity.repeats = true
         activity.interval = 10
         activity.tolerance = 0
@@ -173,7 +184,7 @@ class Commands {
             xpc_dictionary_set_string(request, "command", "proc_stat")
             
             var error: xpc_rich_error_t? = nil
-            let queue = DispatchQueue(label: "com.mikaana.SwiftConnect.privileged_exec")
+            let queue = DispatchQueue(label: "com.mikaana.swiftconnect.privileged_exec")
             let session = xpc_session_create_mach_service(daemonService, queue, .none, &error)
             if let error = error {
                 Logger.helperClient.error("Unable to create xpc_session \(error.description)")
@@ -202,7 +213,7 @@ class Commands {
     
     class func disable_conn_check() {
         Logger.helperClient.info("Stopping periodic check of openconnect state")
-        let activity = NSBackgroundActivityScheduler(identifier: "com.mikaana.SwiftConnect.proc_stat_check")
+        let activity = NSBackgroundActivityScheduler(identifier: "com.mikaana.swiftconnect.proc_stat_check")
         activity.invalidate()
     }
 }

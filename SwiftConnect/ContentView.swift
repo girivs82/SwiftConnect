@@ -28,18 +28,9 @@ struct VPNApprovalScreen: View {
     
     var body: some View {
         VStack {
-            Text("Approve Background Launch Daemon Notice")
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .lineLimit(100)
-            Spacer().frame(height: 25)
             Text($settings_help_message.helpMessage.wrappedValue)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .lineLimit(100)
-            Spacer().frame(height: 25)
-            Button(action:
-            {
-                AppDelegate.shared.setAppServiceState()
-            }) { Text("Dismiss").frame(maxHeight: 25) }
         }
     }
 }

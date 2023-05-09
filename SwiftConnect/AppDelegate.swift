@@ -9,10 +9,12 @@ import Cocoa
 import SwiftUI
 import UserNotifications
 import os.log
+import ServiceManagement
 
 class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
     static var shared: AppDelegate!;
     static var network_dropped: Bool = false
+    static var open_settings: Bool = false
     static var network_monitor = NetworkPathMonitor.shared
     private var credentials: Credentials = Credentials()
     private var vpn: VPNController = VPNController()
@@ -54,8 +56,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         statusItem.button?.image = (connected) ? icon_connected : icon
         statusItem.button?.image?.isTemplate = !connected || AppDelegate.network_dropped
         vpn.state = connected ? .launched : .stopped
-        //popover.contentViewController.
-        //generateNotification(sound: "NO", title: (connected) ? "VPN Connected" : "VPN Disconnected", body: (connected) ? "VPN is now connected." : "VPN is now disconnected.")
     }
     
     func networkDidDrop(dropped: Bool) {
@@ -72,7 +72,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         Self.shared = self;
         // Hide app window
         NSApplication.shared.windows.first?.close()
-        setAppServiceState()
     }
     
     func applicationDidFinishLaunching(_ aNotification: Notification) {
@@ -88,6 +87,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         self.serverlist = load_gateways_from_plist(plist_name: "ngvpn")
         // Just initialize the vpncontroller, so that credentials can be passed to it as early as possible
         vpn.initialize(credentials: credentials)
+        // Periodically poll for status changes until daemon is enabled
+        Commands.status_change_check()
         // Initialize statusItem
         statusItem.button!.target = self
     }
@@ -132,36 +133,33 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         popover.performClose(self)
     }
     
-    func setAppServiceState() {
-        DispatchQueue.main.async {
-            let status = Commands.status()
-            switch status {
-            case .notRegistered:
-                self.settings_help_message.helpMessage = "Please wait a second..."
-                Commands.unregister()
-                DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-                    self.settings_help_message.helpMessage = ""
-                    Commands.register()
-                    self.vpn.state = .stopped
-                }
-            case .enabled:
-                self.settings_help_message.helpMessage = "Please wait a second..."
-                DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-                    self.settings_help_message.helpMessage = ""
-                    Commands.register()
-                    self.vpn.state = .stopped
-                }
-                Commands.unregister()
-            case .requiresApproval:
-                self.settings_help_message.helpMessage = "Enable SwiftConnect in Settings->General->Login Items in System Settings which has been opened for you."
+    func setAppServiceState() -> SMAppService.Status {
+        let status = Commands.status()
+        switch status {
+        case .notRegistered:
+            self.settings_help_message.helpMessage = "Please wait..."
+            Commands.register()
+            AppDelegate.open_settings = false
+        case .enabled:
+            self.settings_help_message.helpMessage = "If you see this, its a bug. Report this."
+            Commands.register()
+            self.vpn.state = .stopped
+            AppDelegate.open_settings = false
+        case .requiresApproval:
+            self.settings_help_message.helpMessage = "Approve SwiftConnect in Settings->General->Login Items in System Settings which has been opened for you. You can also approve in the notification banner if it shows up in the notifications area of your screen."
+            if !AppDelegate.open_settings {
                 Commands.settings()
-            case .notFound:
-                Commands.register()
-                self.settings_help_message.helpMessage = "Please approve the launch daemon request so that openconnect can be run via the daemon with elevated privileges in System Settings. Check your notification area."
-            @unknown default:
-                break
+                AppDelegate.open_settings = true
             }
+        case .notFound:
+            Commands.register()
+            self.settings_help_message.helpMessage = "Please approve the launch daemon request so that openconnect can be run via the daemon with elevated privileges in System Settings. Check your notification area."
+            AppDelegate.open_settings = false
+        @unknown default:
+            AppDelegate.open_settings = false
+            break
         }
+        return status
     }
     
     func vpnBadState() {

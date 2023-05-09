@@ -10,6 +10,6 @@ import ServiceManagement
 
 
 class SettingsHelpMessage: ObservableObject {
-    @Published public var helpMessage : String = ""
+    @Published public var helpMessage : String = "Please wait..."
 }
 
